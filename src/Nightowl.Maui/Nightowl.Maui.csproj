@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+<Project Sdk="Microsoft.NET.Sdk.Razor">
 
     <PropertyGroup>
         <TargetFrameworks>net10.0-android</TargetFrameworks>
@@ -29,10 +29,10 @@
         <MauiXamlInflator>SourceGen</MauiXamlInflator>
 
         <!-- Display name -->
-        <ApplicationTitle>Nightowl.Maui</ApplicationTitle>
+        <ApplicationTitle>Nightowl</ApplicationTitle>
 
         <!-- App Identifier -->
-        <ApplicationId>com.companyname.nightowl.maui</ApplicationId>
+        <ApplicationId>com.nightowl.app</ApplicationId>
 
         <!-- Versions -->
         <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
@@ -46,6 +46,16 @@
         <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">24.0</SupportedOSPlatformVersion>
         <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
         <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="$(TargetFramework.Contains('-android')) and '$(Configuration)' == 'Release'">
+        <AndroidPackageFormat>apk</AndroidPackageFormat>
+        <AndroidKeyStore>true</AndroidKeyStore>
+        <AndroidSigningKeyStore>$(MSBuildThisFileDirectory)..\..\nightowl.keystore</AndroidSigningKeyStore>
+        <AndroidSigningKeyAlias>nightowl</AndroidSigningKeyAlias>
+        <AndroidSigningKeyPass>nightowl123</AndroidSigningKeyPass>
+        <AndroidSigningStorePass>nightowl123</AndroidSigningStorePass>
+        <RuntimeIdentifiers>android-arm64;android-arm;android-x64</RuntimeIdentifiers>
     </PropertyGroup>
 
     <ItemGroup>

@@ -16,6 +16,8 @@
 ## Packages & Binaries
 *.apk
 *.aab
+*.keystore
+*.jks
 
 ## Logs & Temp
 *.log
