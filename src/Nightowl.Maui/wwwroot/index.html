@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Nightowl</title>
+    <base href="/" />
+    
+    <!-- MudBlazor fonts and styles -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    
+    <link rel="stylesheet" href="app.css" />
+    <link rel="stylesheet" href="Nightowl.Maui.styles.css" />
+    <link rel="icon" href="data:,">
+</head>
+
+<body>
+    <div id="app">
+        <div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #0f111a; color: #e2e8f0; font-family: 'Plus Jakarta Sans', sans-serif;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">🦉</div>
+            <h2 style="margin: 0; font-family: 'Cinzel', serif; letter-spacing: 2px;">NIGHTOWL</h2>
+            <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 0.5rem;">Opening your library...</p>
+        </div>
+    </div>
+
+    <div id="blazor-error-ui" data-nosnippet>
+        An unhandled error has occurred.
+        <a href="." class="reload">Reload</a>
+        <span class="dismiss">🗙</span>
+    </div>
+
+    <script src="_framework/blazor.webview.js" autostart="false"></script>
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+    <script src="js/barcodeScanner.js"></script>
+</body>
+</html>

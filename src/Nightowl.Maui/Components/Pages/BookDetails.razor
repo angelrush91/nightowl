@@ -1,0 +1,344 @@
+@page "/book/{Id:guid}"
+@inject IBookService BookService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+
+@if (_isLoading)
+{
+    <div class="d-flex justify-center py-12">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    </div>
+}
+else if (_book == null)
+{
+    <MudPaper Class="pa-8 text-center rounded-lg" Elevation="1">
+        <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Size="Size.Large" Color="Color.Error" Class="mb-3" />
+        <MudText Typo="Typo.h6">Book Not Found</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-3" OnClick="BackToLibrary">Back to Library</MudButton>
+    </MudPaper>
+}
+else
+{
+    <div class="mb-6">
+        <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack" Class="mb-3 text-none" OnClick="BackToLibrary">
+            Back to Library
+        </MudButton>
+
+        <MudGrid>
+            <!-- Left Column: Cover & Quick Actions -->
+            <MudItem xs="12" md="4">
+                <MudCard Elevation="2" Class="rounded-lg pa-4 text-center">
+                    <div class="d-flex justify-center mb-4">
+                        @if (!string.IsNullOrWhiteSpace(_book.CoverUrl))
+                        {
+                            <img src="@_book.CoverUrl" alt="Cover" style="width: 160px; height: 240px; object-fit: cover; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.4);" />
+                        }
+                        else
+                        {
+                            <div style="width: 160px; height: 240px; background: #1e293b; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #64748b;">
+                                <MudIcon Icon="@Icons.Material.Filled.MenuBook" Size="Size.Large" />
+                            </div>
+                        }
+                    </div>
+
+                    <MudSelect T="ReadingStatus" Value="@_book.Status" ValueChanged="OnStatusChanged" Label="Reading Status" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3">
+                        <MudSelectItem Value="ReadingStatus.WantToRead">Want to Read</MudSelectItem>
+                        <MudSelectItem Value="ReadingStatus.CurrentlyReading">Currently Reading</MudSelectItem>
+                        <MudSelectItem Value="ReadingStatus.Completed">Completed</MudSelectItem>
+                        <MudSelectItem Value="ReadingStatus.OnHold">On Hold</MudSelectItem>
+                        <MudSelectItem Value="ReadingStatus.Dropped">Dropped</MudSelectItem>
+                    </MudSelect>
+
+                    <MudButton Variant="Variant.Filled" 
+                               Color="Color.Primary" 
+                               FullWidth="true" 
+                               StartIcon="@Icons.Material.Filled.EditNote" 
+                               Class="py-2 mb-2 text-none" 
+                               OnClick="OpenProgressDialog">
+                        Update Progress
+                    </MudButton>
+
+                    <MudButton Variant="Variant.Outlined" 
+                               Color="Color.Error" 
+                               FullWidth="true" 
+                               StartIcon="@Icons.Material.Filled.DeleteOutline" 
+                               Class="text-none" 
+                               OnClick="ConfirmDeleteAsync">
+                        Delete Book
+                    </MudButton>
+                </MudCard>
+            </MudItem>
+
+            <!-- Right Column: Details, Progress & Review -->
+            <MudItem xs="12" md="8">
+                <!-- Book Info Card -->
+                <MudCard Elevation="2" Class="rounded-lg pa-4 mb-4">
+                    <MudText Typo="Typo.h4" Style="font-weight: 700; line-height: 1.2;">@_book.Title</MudText>
+                    @if (!string.IsNullOrWhiteSpace(_book.Subtitle))
+                    {
+                        <MudText Typo="Typo.subtitle1" Color="Color.Secondary" Class="mb-1">@_book.Subtitle</MudText>
+                    }
+                    <MudText Typo="Typo.body1" Class="mb-3" Style="font-weight: 600;">By @_book.Authors</MudText>
+
+                    <MudDivider Class="my-3" />
+
+                    <!-- Progress Section -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-space-between align-center mb-1">
+                            <MudText Typo="Typo.subtitle2" Style="font-weight: 700;">Reading Progress</MudText>
+                            <MudText Typo="Typo.body2" Style="font-weight: 700;">
+                                @_book.CurrentPage / @_book.PageCount pages (@_book.ProgressPercentage.ToString("F1")%)
+                            </MudText>
+                        </div>
+                        <MudProgressLinear Color="Color.Primary" Value="@_book.ProgressPercentage" Rounded="true" Size="Size.Large" Class="my-2" />
+                        <div class="d-flex justify-space-between">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                Remaining: @_book.RemainingPages pages
+                            </MudText>
+                            @if (_book.DateStarted.HasValue)
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    Started: @_book.DateStarted.Value.ToShortDateString()
+                                </MudText>
+                            }
+                            @if (_book.DateCompleted.HasValue)
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Success">
+                                    Finished: @_book.DateCompleted.Value.ToShortDateString()
+                                </MudText>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Metadata Grid -->
+                    <MudGrid Class="mb-2">
+                        <MudItem xs="6" sm="4">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">ISBN-13</MudText>
+                            <MudText Typo="Typo.body2" Style="font-weight: 600;">@_book.Isbn</MudText>
+                        </MudItem>
+                        @if (!string.IsNullOrWhiteSpace(_book.Isbn10))
+                        {
+                            <MudItem xs="6" sm="4">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">ISBN-10</MudText>
+                                <MudText Typo="Typo.body2" Style="font-weight: 600;">@_book.Isbn10</MudText>
+                            </MudItem>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(_book.Publisher))
+                        {
+                            <MudItem xs="6" sm="4">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Publisher</MudText>
+                                <MudText Typo="Typo.body2">@_book.Publisher</MudText>
+                            </MudItem>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(_book.PublishedDate))
+                        {
+                            <MudItem xs="6" sm="4">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Published</MudText>
+                                <MudText Typo="Typo.body2">@_book.PublishedDate</MudText>
+                            </MudItem>
+                        }
+                        <MudItem xs="6" sm="4">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Added to Library</MudText>
+                            <MudText Typo="Typo.body2">@_book.DateAdded.ToShortDateString()</MudText>
+                        </MudItem>
+                    </MudGrid>
+
+                    @if (!string.IsNullOrWhiteSpace(_book.Description))
+                    {
+                        <MudDivider Class="my-3" />
+                        <MudText Typo="Typo.subtitle2" Style="font-weight: 700;" Class="mb-1">Description</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary" Style="line-height: 1.6;">
+                            @_book.Description
+                        </MudText>
+                    }
+                </MudCard>
+
+                <!-- Rating and Review Card -->
+                <MudCard Elevation="2" Class="rounded-lg pa-4 mb-4">
+                    <MudText Typo="Typo.subtitle1" Style="font-weight: 700;" Class="mb-2">Your Rating & Review</MudText>
+                    <div class="d-flex align-center gap-2 mb-3">
+                        <MudRating SelectedValue="@(_book.Rating ?? 0)" SelectedValueChanged="OnRatingChanged" MaxValue="5" Color="Color.Warning" />
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">
+                            @(_book.Rating.HasValue ? $"{_book.Rating.Value} / 5 stars" : "Not rated yet")
+                        </MudText>
+                    </div>
+
+                    <MudTextField @bind-Value="_reviewInput" 
+                                  Label="Notes & Personal Review" 
+                                  Variant="Variant.Outlined" 
+                                  Lines="3" 
+                                  Placeholder="Write your thoughts, takeaways, or memorable quotes..." />
+                    
+                    <div class="d-flex justify-end mt-2">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" OnClick="SaveReviewAsync">
+                            Save Review
+                        </MudButton>
+                    </div>
+                </MudCard>
+
+                <!-- Reading History Sessions Timeline -->
+                <MudCard Elevation="2" Class="rounded-lg pa-4">
+                    <MudText Typo="Typo.subtitle1" Style="font-weight: 700;" Class="mb-3">Reading Log History</MudText>
+                    @if (_book.Sessions.Count == 0)
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">No reading sessions recorded yet.</MudText>
+                    }
+                    else
+                    {
+                        <MudTimeline TimelinePosition="TimelinePosition.Start">
+                            @foreach (var session in _book.Sessions)
+                            {
+                                <MudTimelineItem Color="Color.Primary" Size="Size.Small">
+                                    <ItemContent>
+                                        <div class="d-flex justify-space-between align-center">
+                                            <MudText Typo="Typo.body2" Style="font-weight: 700;">
+                                                Read @session.PagesRead pages (p. @session.StartPage → @session.EndPage)
+                                            </MudText>
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                                @session.SessionDate.ToLocalTime().ToString("MMM dd, yyyy HH:mm")
+                                            </MudText>
+                                        </div>
+                                        @if (!string.IsNullOrWhiteSpace(session.Notes))
+                                        {
+                                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-1" Style="font-style: italic;">
+                                                "@session.Notes"
+                                            </MudText>
+                                        }
+                                    </ItemContent>
+                                </MudTimelineItem>
+                            }
+                        </MudTimeline>
+                    }
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private BookDetailsDto? _book;
+    private bool _isLoading = true;
+    private string? _reviewInput;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBookAsync();
+    }
+
+    private async Task LoadBookAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            _book = await BookService.GetBookByIdAsync(Id);
+            if (_book != null)
+            {
+                _reviewInput = _book.Review;
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading book: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void BackToLibrary()
+    {
+        NavigationManager.NavigateTo("library");
+    }
+
+    private async Task OnStatusChanged(ReadingStatus newStatus)
+    {
+        try
+        {
+            await BookService.UpdateStatusAsync(Id, newStatus);
+            Snackbar.Add($"Status updated to {newStatus}", Severity.Success);
+            await LoadBookAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error updating status: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task OnRatingChanged(int newRating)
+    {
+        try
+        {
+            int? val = newRating > 0 ? newRating : null;
+            await BookService.UpdateRatingAndReviewAsync(Id, val, _reviewInput);
+            Snackbar.Add("Rating updated", Severity.Success);
+            await LoadBookAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task SaveReviewAsync()
+    {
+        try
+        {
+            await BookService.UpdateRatingAndReviewAsync(Id, _book?.Rating, _reviewInput);
+            Snackbar.Add("Review saved!", Severity.Success);
+            await LoadBookAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task OpenProgressDialog()
+    {
+        if (_book == null) return;
+
+        var parameters = new DialogParameters<Nightowl.Maui.Components.Dialogs.UpdateProgressDialog>
+        {
+            { x => x.BookId, _book.Id },
+            { x => x.BookTitle, _book.Title },
+            { x => x.CurrentPage, _book.CurrentPage },
+            { x => x.TotalPages, _book.PageCount }
+        };
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<Nightowl.Maui.Components.Dialogs.UpdateProgressDialog>("Log Reading Session", parameters, options);
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled)
+        {
+            await LoadBookAsync();
+        }
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        bool? confirmed = await DialogService.ShowMessageBoxAsync(
+            "Delete Book",
+            $"Are you sure you want to remove '{_book?.Title}' from your library? This cannot be undone.",
+            yesText: "Delete",
+            cancelText: "Cancel");
+
+        if (confirmed == true)
+        {
+            try
+            {
+                await BookService.DeleteBookAsync(Id);
+                Snackbar.Add("Book deleted.", Severity.Info);
+                BackToLibrary();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Failed to delete: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+}

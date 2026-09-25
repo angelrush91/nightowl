@@ -1,0 +1,133 @@
+@page "/stats"
+@inject IBookService BookService
+@inject ISnackbar Snackbar
+
+<div class="mb-6">
+    <div class="mb-4">
+        <MudText Typo="Typo.h4" Style="font-weight: 700; letter-spacing: -0.5px;">Reading Statistics</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">Insights into your reading habits and library journey.</MudText>
+    </div>
+
+    @if (_isLoading)
+    {
+        <div class="d-flex justify-center py-12">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+        </div>
+    }
+    else if (_stats == null || _stats.TotalBooks == 0)
+    {
+        <MudPaper Class="pa-8 text-center rounded-lg" Elevation="0" Outlined="true" Style="border-style: dashed;">
+            <MudIcon Icon="@Icons.Material.Filled.Analytics" Size="Size.Large" Color="Color.Secondary" Class="mb-3" />
+            <MudText Typo="Typo.h6">No Reading Data Yet</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Start adding books and tracking your reading to see analytics here.</MudText>
+        </MudPaper>
+    }
+    else
+    {
+        <MudGrid Class="mb-6">
+            <MudItem xs="12" sm="6" md="3">
+                <MudCard Elevation="2" Class="rounded-lg pa-4 h-100">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Completion Rate</MudText>
+                    <MudText Typo="Typo.h4" Color="Color.Primary" Style="font-weight: 700;">@_stats.CompletionPercentage%</MudText>
+                    <MudProgressLinear Color="Color.Primary" Value="@_stats.CompletionPercentage" Rounded="true" Class="mt-2" />
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1 d-block">
+                        @_stats.BooksCompleted of @_stats.TotalBooks books finished
+                    </MudText>
+                </MudCard>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="3">
+                <MudCard Elevation="2" Class="rounded-lg pa-4 h-100">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Total Pages Read</MudText>
+                    <MudText Typo="Typo.h4" Color="Color.Success" Style="font-weight: 700;">@_stats.TotalPagesRead.ToString("N0")</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2 d-block">
+                        Pages across all your books & sessions
+                    </MudText>
+                </MudCard>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="3">
+                <MudCard Elevation="2" Class="rounded-lg pa-4 h-100">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Active Reading</MudText>
+                    <MudText Typo="Typo.h4" Color="Color.Info" Style="font-weight: 700;">@_stats.BooksCurrentlyReading</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2 d-block">
+                        Books currently in progress
+                    </MudText>
+                </MudCard>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="3">
+                <MudCard Elevation="2" Class="rounded-lg pa-4 h-100">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Average Rating</MudText>
+                    <div class="d-flex align-center gap-1 mt-1">
+                        <MudText Typo="Typo.h4" Color="Color.Warning" Style="font-weight: 700;">
+                            @(_stats.AverageRating?.ToString("F1") ?? "—")
+                        </MudText>
+                        @if (_stats.AverageRating.HasValue)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Star" Color="Color.Warning" Size="Size.Medium" />
+                        }
+                    </div>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2 d-block">
+                        Across rated books in library
+                    </MudText>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+
+        <!-- Library Breakdown by Status -->
+        <MudCard Elevation="2" Class="rounded-lg pa-4">
+            <MudText Typo="Typo.h6" Style="font-weight: 700;" Class="mb-3">Library Breakdown</MudText>
+            
+            <div class="mb-3">
+                <div class="d-flex justify-space-between align-center mb-1">
+                    <MudText Typo="Typo.body2">Completed</MudText>
+                    <MudText Typo="Typo.body2" Style="font-weight: 600;">@_stats.BooksCompleted (@GetPercentage(_stats.BooksCompleted, _stats.TotalBooks)%)</MudText>
+                </div>
+                <MudProgressLinear Color="Color.Success" Value="@GetPercentage(_stats.BooksCompleted, _stats.TotalBooks)" Rounded="true" Size="Size.Medium" />
+            </div>
+
+            <div class="mb-3">
+                <div class="d-flex justify-space-between align-center mb-1">
+                    <MudText Typo="Typo.body2">Currently Reading</MudText>
+                    <MudText Typo="Typo.body2" Style="font-weight: 600;">@_stats.BooksCurrentlyReading (@GetPercentage(_stats.BooksCurrentlyReading, _stats.TotalBooks)%)</MudText>
+                </div>
+                <MudProgressLinear Color="Color.Info" Value="@GetPercentage(_stats.BooksCurrentlyReading, _stats.TotalBooks)" Rounded="true" Size="Size.Medium" />
+            </div>
+
+            <div>
+                <div class="d-flex justify-space-between align-center mb-1">
+                    <MudText Typo="Typo.body2">Want to Read</MudText>
+                    <MudText Typo="Typo.body2" Style="font-weight: 600;">@_stats.BooksWantToRead (@GetPercentage(_stats.BooksWantToRead, _stats.TotalBooks)%)</MudText>
+                </div>
+                <MudProgressLinear Color="Color.Secondary" Value="@GetPercentage(_stats.BooksWantToRead, _stats.TotalBooks)" Rounded="true" Size="Size.Medium" />
+            </div>
+        </MudCard>
+    }
+</div>
+
+@code {
+    private ReadingStatsDto? _stats;
+    private bool _isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _stats = await BookService.GetReadingStatsAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading stats: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private static double GetPercentage(int count, int total)
+    {
+        return total > 0 ? Math.Round((double)count / total * 100.0, 1) : 0;
+    }
+}

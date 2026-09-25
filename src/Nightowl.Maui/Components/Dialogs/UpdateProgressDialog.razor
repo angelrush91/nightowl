@@ -1,0 +1,133 @@
+@inject IBookService BookService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <div class="pa-2">
+            <MudText Typo="Typo.subtitle1" Style="font-weight: 700;">@BookTitle</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Total: @TotalPages pages</MudText>
+
+            <div class="mt-4">
+                <MudText Typo="Typo.body2" Class="mb-1">
+                    Current Page: <strong>@_currentPage</strong> / @TotalPages (@ProgressPercentage.ToString("F1")%)
+                </MudText>
+                
+                @if (TotalPages > 0)
+                {
+                    <MudSlider @bind-Value="_currentPage" Min="0" Max="@TotalPages" Color="Color.Primary" ValueLabel="true" Class="my-3" />
+                }
+
+                <MudNumericField @bind-Value="_currentPage" 
+                                 Label="Page Number" 
+                                 Variant="Variant.Outlined" 
+                                 Margin="Margin.Dense" 
+                                 Min="0" 
+                                 Max="@(TotalPages > 0 ? TotalPages : 99999)" 
+                                 Class="mb-3" />
+
+                <!-- Quick Increment Chips -->
+                <div class="d-flex gap-2 flex-wrap mb-4">
+                    <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="() => AddPages(10)">+10 pages</MudChip>
+                    <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="() => AddPages(25)">+25 pages</MudChip>
+                    <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="() => AddPages(50)">+50 pages</MudChip>
+                    @if (TotalPages > 0)
+                    {
+                        <MudChip T="string" Variant="Variant.Filled" Color="Color.Success" Size="Size.Small" OnClick="MarkFinished">Finished! 🎉</MudChip>
+                    }
+                </div>
+
+                <MudTextField @bind-Value="_notes" 
+                              Label="Session Notes (optional)" 
+                              Placeholder="What happened or what did you think of today's reading?" 
+                              Variant="Variant.Outlined" 
+                              Lines="2" 
+                              Margin="Margin.Dense" />
+            </div>
+        </div>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Variant="Variant.Text" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="_isSaving" OnClick="SaveProgressAsync">
+            @if (_isSaving)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="ms-n1" />
+                <span class="ms-2">Saving...</span>
+            }
+            else
+            {
+                <span>Update Progress</span>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter]
+    public Guid BookId { get; set; }
+
+    [Parameter]
+    public string BookTitle { get; set; } = string.Empty;
+
+    [Parameter]
+    public int CurrentPage { get; set; }
+
+    [Parameter]
+    public int TotalPages { get; set; }
+
+    private int _currentPage;
+    private string? _notes;
+    private bool _isSaving = false;
+
+    private double ProgressPercentage => TotalPages > 0 
+        ? Math.Min(100.0, Math.Round((double)_currentPage / TotalPages * 100.0, 1)) 
+        : 0;
+
+    protected override void OnInitialized()
+    {
+        _currentPage = CurrentPage;
+    }
+
+    private void AddPages(int count)
+    {
+        _currentPage = TotalPages > 0 ? Math.Min(TotalPages, _currentPage + count) : _currentPage + count;
+    }
+
+    private void MarkFinished()
+    {
+        if (TotalPages > 0)
+        {
+            _currentPage = TotalPages;
+        }
+    }
+
+    private async Task SaveProgressAsync()
+    {
+        _isSaving = true;
+        try
+        {
+            var updateDto = new UpdateProgressDto(
+                CurrentPage: _currentPage,
+                Notes: _notes,
+                LogDate: DateTime.UtcNow
+            );
+
+            await BookService.UpdateProgressAsync(BookId, updateDto);
+            Snackbar.Add("Reading progress logged!", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

@@ -1,0 +1,354 @@
+@using Nightowl.Domain.ValueObjects
+@using Nightowl.Domain.Enums
+@inject IBookService BookService
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<MudDialog>
+    <DialogContent>
+        @if (_previewMetadata == null)
+        {
+            <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" Class="pa-3">
+                <MudTabPanel Text="Barcode Scanner" Icon="@Icons.Material.Filled.QrCodeScanner">
+                    <div class="d-flex flex-column align-center justify-center py-2">
+                        <div style="position: relative; width: 100%; max-width: 380px; height: 260px; background: #000; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                            <video id="scannerVideo" @ref="_videoRef" style="width: 100%; height: 100%; object-fit: cover;" playsinline></video>
+                            
+                            @if (!_isCameraActive)
+                            {
+                                <div style="position: absolute; text-align: center; color: #cbd5e1; padding: 1rem;">
+                                    <MudIcon Icon="@Icons.Material.Filled.CameraAlt" Size="Size.Large" Class="mb-2" />
+                                    <MudText Typo="Typo.body2">Camera scanner is idle</MudText>
+                                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Class="mt-2 text-none" OnClick="StartCameraAsync">
+                                        Start Camera
+                                    </MudButton>
+                                </div>
+                            }
+                            else
+                            {
+                                <!-- Aiming reticle overlay -->
+                                <div style="position: absolute; width: 75%; height: 50%; border: 2px dashed rgba(99, 102, 241, 0.8); border-radius: 8px; pointer-events: none; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);">
+                                    <div style="position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: #ef4444; opacity: 0.8;"></div>
+                                </div>
+                            }
+                        </div>
+
+                        @if (_isCameraActive)
+                        {
+                            <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" Class="mt-3 text-none" OnClick="StopCameraAsync">
+                                Stop Camera
+                            </MudButton>
+                        }
+
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2 text-center">
+                            Align the book's barcode within the frame.
+                        </MudText>
+                    </div>
+                </MudTabPanel>
+
+                <MudTabPanel Text="Enter ISBN" Icon="@Icons.Material.Filled.Keyboard">
+                    <div class="py-2">
+                        <MudTextField @bind-Value="_isbnInput" 
+                                      Label="ISBN-10 or ISBN-13" 
+                                      Placeholder="e.g. 9780132350884 or 0-13-235088-2" 
+                                      Variant="Variant.Outlined" 
+                                      Adornment="Adornment.Start" 
+                                      AdornmentIcon="@Icons.Material.Filled.Search"
+                                      Immediate="true"
+                                      HelperText="@_isbnValidationMessage"
+                                      HelperTextOnFocus="true"
+                                      OnKeyDown="@HandleKeyDown" />
+
+                        <MudButton Variant="Variant.Filled" 
+                                   Color="Color.Primary" 
+                                   FullWidth="true" 
+                                   Class="mt-4 py-2 text-none" 
+                                   Disabled="@(!_isIsbnValid || _isLoading)" 
+                                   OnClick="LookupIsbnAsync">
+                            @if (_isLoading)
+                            {
+                                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                                <span class="ms-2">Looking up metadata...</span>
+                            }
+                            else
+                            {
+                                <span>Search OpenLibrary</span>
+                            }
+                        </MudButton>
+                    </div>
+                </MudTabPanel>
+            </MudTabs>
+        }
+        else
+        {
+            <!-- Book Preview & Confirmation Card -->
+            <MudCard Elevation="0" Class="pa-2">
+                <div class="d-flex gap-4">
+                    @if (!string.IsNullOrWhiteSpace(_coverUrl))
+                    {
+                        <img src="@_coverUrl" alt="Cover" style="width: 90px; height: 135px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);" />
+                    }
+                    else
+                    {
+                        <div style="width: 90px; height: 135px; background: #1e293b; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #64748b;">
+                            <MudIcon Icon="@Icons.Material.Filled.MenuBook" Size="Size.Large" />
+                        </div>
+                    }
+
+                    <div style="flex: 1;">
+                        <MudTextField @bind-Value="_title" Label="Title" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" />
+                        <MudTextField @bind-Value="_authors" Label="Author(s)" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" />
+                        <div class="d-flex gap-2">
+                            <MudNumericField @bind-Value="_pageCount" Label="Total Pages" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Class="mb-2" />
+                            <MudTextField @bind-Value="_isbn" Label="ISBN" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="true" Class="mb-2" />
+                        </div>
+                    </div>
+                </div>
+
+                <MudDivider Class="my-3" />
+
+                <div class="d-flex gap-3 align-center">
+                    <MudSelect @bind-Value="_status" Label="Reading Status" Variant="Variant.Outlined" Margin="Margin.Dense" Style="flex: 1;">
+                        <MudSelectItem Value="ReadingStatus.WantToRead">Want to Read</MudSelectItem>
+                        <MudSelectItem Value="ReadingStatus.CurrentlyReading">Currently Reading</MudSelectItem>
+                        <MudSelectItem Value="ReadingStatus.Completed">Completed</MudSelectItem>
+                        <MudSelectItem Value="ReadingStatus.OnHold">On Hold</MudSelectItem>
+                    </MudSelect>
+
+                    @if (_status == ReadingStatus.CurrentlyReading)
+                    {
+                        <MudNumericField @bind-Value="_initialPage" Label="Current Page" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="@_pageCount" Style="width: 130px;" />
+                    }
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(_description))
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-3" Style="max-height: 80px; overflow-y: auto;">
+                        @_description
+                    </MudText>
+                }
+            </MudCard>
+        }
+    </DialogContent>
+
+    <DialogActions>
+        @if (_previewMetadata != null)
+        {
+            <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="ResetLookup">Search Again</MudButton>
+            <MudSpacer />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="_isSaving" OnClick="SaveBookAsync">
+                @if (_isSaving)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                    <span class="ms-2">Saving...</span>
+                }
+                else
+                {
+                    <span>Save to Library</span>
+                }
+            </MudButton>
+        }
+        else
+        {
+            <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="Cancel">Cancel</MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    private ElementReference _videoRef;
+    private DotNetObjectReference<AddBookDialog>? _dotNetRef;
+    private bool _isCameraActive = false;
+
+    private string _isbnInput = string.Empty;
+    private bool _isIsbnValid => Isbn.TryCreate(_isbnInput, out _);
+    private string _isbnValidationMessage => string.IsNullOrWhiteSpace(_isbnInput) 
+        ? "Enter a 10 or 13-digit ISBN" 
+        : (_isIsbnValid ? "✓ Valid ISBN format" : "✕ Invalid ISBN checksum or length");
+
+    private bool _isLoading = false;
+    private bool _isSaving = false;
+
+    private IsbnBookMetadataDto? _previewMetadata;
+
+    // Editable form bindings
+    private string _title = string.Empty;
+    private string _authors = string.Empty;
+    private string _isbn = string.Empty;
+    private int _pageCount = 0;
+    private string? _subtitle;
+    private string? _publisher;
+    private string? _publishedDate;
+    private string? _coverUrl;
+    private string? _description;
+    private ReadingStatus _status = ReadingStatus.WantToRead;
+    private int _initialPage = 0;
+
+    protected override void OnInitialized()
+    {
+        _dotNetRef = DotNetObjectReference.Create(this);
+    }
+
+    private async Task StartCameraAsync()
+    {
+        try
+        {
+            _isCameraActive = true;
+            StateHasChanged();
+            var success = await JS.InvokeAsync<bool>("nightowlScanner.startScanner", _videoRef, _dotNetRef);
+            if (!success)
+            {
+                _isCameraActive = false;
+                Snackbar.Add("Could not activate camera. Please ensure camera permissions are granted or type ISBN manually.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            _isCameraActive = false;
+            Snackbar.Add($"Camera error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task StopCameraAsync()
+    {
+        try
+        {
+            _isCameraActive = false;
+            await JS.InvokeVoidAsync("nightowlScanner.stopScanner");
+        }
+        catch
+        {
+            // ignore cleanup errors
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnBarcodeDetected(string barcode)
+    {
+        await StopCameraAsync();
+        _isbnInput = barcode;
+        Snackbar.Add($"Barcode scanned: {barcode}", Severity.Info);
+        await LookupIsbnAsync();
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && _isIsbnValid && !_isLoading)
+        {
+            await LookupIsbnAsync();
+        }
+    }
+
+    private async Task LookupIsbnAsync()
+    {
+        if (!_isIsbnValid) return;
+
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var meta = await BookService.LookupIsbnAsync(_isbnInput);
+            if (meta != null)
+            {
+                _previewMetadata = meta;
+                _title = meta.Title;
+                _authors = meta.Authors;
+                _isbn = meta.Isbn;
+                _pageCount = meta.PageCount;
+                _subtitle = meta.Subtitle;
+                _publisher = meta.Publisher;
+                _publishedDate = meta.PublishDate;
+                _coverUrl = meta.CoverUrl;
+                _description = meta.Description;
+            }
+            else
+            {
+                // Fallback: allow manual metadata entry with this valid ISBN
+                var isbnObj = new Isbn(_isbnInput);
+                _previewMetadata = new IsbnBookMetadataDto(
+                    Title: "",
+                    Subtitle: null,
+                    Authors: "",
+                    Isbn: isbnObj.Value,
+                    PageCount: 0,
+                    Publisher: null,
+                    PublishDate: null,
+                    CoverUrl: $"https://covers.openlibrary.org/b/isbn/{isbnObj.Value}-M.jpg",
+                    Description: null
+                );
+                _isbn = isbnObj.Value;
+                _coverUrl = _previewMetadata.CoverUrl;
+                Snackbar.Add("No book metadata found online. You can enter details manually.", Severity.Info);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Lookup error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ResetLookup()
+    {
+        _previewMetadata = null;
+        _title = string.Empty;
+        _authors = string.Empty;
+        _pageCount = 0;
+        _description = null;
+    }
+
+    private async Task SaveBookAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_title))
+        {
+            Snackbar.Add("Please enter a book title.", Severity.Warning);
+            return;
+        }
+
+        _isSaving = true;
+        try
+        {
+            var createDto = new CreateBookDto(
+                Title: _title,
+                Authors: _authors,
+                Isbn: _isbn,
+                PageCount: _pageCount,
+                Subtitle: _subtitle,
+                Publisher: _publisher,
+                PublishedDate: _publishedDate,
+                CoverUrl: _coverUrl,
+                Description: _description,
+                Status: _status,
+                InitialPage: _initialPage
+            );
+
+            await BookService.AddBookAsync(createDto);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    public async ValueTask DisposeAsync()
+    {
+        await StopCameraAsync();
+        _dotNetRef?.Dispose();
+    }
+}

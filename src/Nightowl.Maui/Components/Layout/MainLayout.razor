@@ -1,0 +1,79 @@
+@inherits LayoutComponentBase
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@using Nightowl.Maui.Theme
+@using Nightowl.Maui.Components.Dialogs
+
+<MudThemeProvider Theme="_theme" @bind-IsDarkMode="_isDarkMode" />
+<MudPopoverProvider />
+<MudDialogProvider FullWidth="true" MaxWidth="MaxWidth.Medium" CloseButton="true" BackdropClick="false" />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1" Dense="true" Class="px-3" Style="backdrop-filter: blur(10px);">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
+        <MudText Typo="Typo.h6" Class="ml-2 d-flex align-center" Style="font-family: 'Cinzel', serif; font-weight: 700; letter-spacing: 1.5px;">
+            🦉 NIGHTOWL
+        </MudText>
+        <MudSpacer />
+        <MudButton Variant="Variant.Filled" 
+                   Color="Color.Primary" 
+                   StartIcon="@Icons.Material.Filled.QrCodeScanner" 
+                   Size="Size.Small" 
+                   Class="rounded-pill mr-2 text-none"
+                   OnClick="OpenAddBookDialog">
+            Add Book
+        </MudButton>
+        <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)" 
+                       Color="Color.Inherit" 
+                       OnClick="@ToggleDarkMode" 
+                       title="@(_isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode")" />
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" Variant="DrawerVariant.Responsive">
+        <MudDrawerHeader Class="d-flex align-center gap-2 py-4">
+            <MudAvatar Color="Color.Primary" Size="Size.Medium">🦉</MudAvatar>
+            <div>
+                <MudText Typo="Typo.subtitle1" Style="font-weight: 700; line-height: 1.2;">Nightowl</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Personal Book Tracker</MudText>
+            </div>
+        </MudDrawerHeader>
+        <MudDivider Class="mb-2" />
+        <MudNavMenu Rounded="true" Margin="Margin.Dense" Color="Color.Primary">
+            <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
+            <MudNavLink Href="library" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AutoStories">My Library</MudNavLink>
+            <MudNavLink Href="stats" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Analytics">Reading Stats</MudNavLink>
+        </MudNavMenu>
+    </MudDrawer>
+
+    <MudMainContent Class="pa-4 pa-sm-6">
+        @Body
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _drawerOpen = true;
+    private bool _isDarkMode = true;
+    private readonly MudTheme _theme = NightowlTheme.CreateTheme();
+
+    private void ToggleDrawer()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    private void ToggleDarkMode()
+    {
+        _isDarkMode = !_isDarkMode;
+    }
+
+    private async Task OpenAddBookDialog()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<AddBookDialog>("Catalog a Book", options);
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled)
+        {
+            Snackbar.Add("Book successfully added to your library!", Severity.Success);
+        }
+    }
+}

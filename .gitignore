@@ -1,0 +1,23 @@
+## Visual Studio / .NET Core
+[Bb]in/
+[Oo]bj/
+*.user
+*.userosscache
+*.sln.docstates
+.vs/
+.idea/
+.vscode/
+
+## SQLite & DBs
+*.db
+*.db-shm
+*.db-wal
+
+## Packages & Binaries
+*.apk
+*.aab
+
+## Logs & Temp
+*.log
+.DS_Store
+Thumbs.db
