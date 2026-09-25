@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using Nightowl.Application.DTOs;
 using Nightowl.Application.Interfaces;
@@ -28,40 +27,36 @@ public class OpenLibraryIsbnService : IIsbnLookupService
 
         try
         {
-            // OpenLibrary books data API
-            // Returns: { "ISBN:9780132350884": { title: "Clean Code", authors: [...], ... } }
-            var key = $"ISBN:{isbn.Value}";
-            var url = $"https://openlibrary.org/api/books?bibkeys={key}&jscmd=data&format=json";
-
-            using var response = await _httpClient.GetAsync(url, cancellationToken);
-            if (!response.IsSuccessStatusCode)
+            // 1. Try OpenLibrary Search API (returns title, authors, cover_i, pages, etc.)
+            var searchUrl = $"https://openlibrary.org/search.json?isbn={isbn.Value}&fields=title,subtitle,author_name,publisher,publish_date,publish_year,number_of_pages_median,cover_i";
+            using var searchResponse = await _httpClient.GetAsync(searchUrl, cancellationToken);
+            if (searchResponse.IsSuccessStatusCode)
             {
-                _logger.LogWarning("OpenLibrary API returned status {StatusCode} for ISBN {Isbn}", response.StatusCode, isbn.Value);
-                return null;
-            }
-
-            var json = await response.Content.ReadAsStringAsync(cancellationToken);
-            if (string.IsNullOrWhiteSpace(json) || json.Trim() == "{}")
-            {
-                _logger.LogInformation("No OpenLibrary data found for ISBN {Isbn}", isbn.Value);
-                return null;
-            }
-
-            using var doc = JsonDocument.Parse(json);
-            if (!doc.RootElement.TryGetProperty(key, out var bookElement))
-            {
-                // Try with ISBN-10 if available
-                if (isbn.Isbn10 != null && doc.RootElement.TryGetProperty($"ISBN:{isbn.Isbn10}", out var altElement))
+                var searchJson = await searchResponse.Content.ReadAsStringAsync(cancellationToken);
+                var searchResult = ParseSearchResult(searchJson, isbn.Value);
+                if (searchResult != null)
                 {
-                    bookElement = altElement;
-                }
-                else
-                {
-                    return null;
+                    _logger.LogInformation("Successfully resolved book metadata via OpenLibrary Search API for ISBN {Isbn}", isbn.Value);
+                    return searchResult;
                 }
             }
 
-            return ParseOpenLibraryElement(bookElement, isbn.Value);
+            // 2. Fallback to OpenLibrary Direct Edition API
+            var editionUrl = $"https://openlibrary.org/isbn/{isbn.Value}.json";
+            using var editionResponse = await _httpClient.GetAsync(editionUrl, cancellationToken);
+            if (editionResponse.IsSuccessStatusCode)
+            {
+                var editionJson = await editionResponse.Content.ReadAsStringAsync(cancellationToken);
+                var editionResult = ParseEditionResult(editionJson, isbn.Value);
+                if (editionResult != null)
+                {
+                    _logger.LogInformation("Successfully resolved book metadata via OpenLibrary Edition API for ISBN {Isbn}", isbn.Value);
+                    return editionResult;
+                }
+            }
+
+            _logger.LogInformation("No OpenLibrary records found for ISBN {Isbn}", isbn.Value);
+            return null;
         }
         catch (Exception ex)
         {
@@ -70,86 +65,140 @@ public class OpenLibraryIsbnService : IIsbnLookupService
         }
     }
 
-    public static IsbnBookMetadataDto ParseOpenLibraryElement(JsonElement bookElement, string isbnValue)
+    public static IsbnBookMetadataDto? ParseSearchResult(string json, string isbnValue)
     {
-        var title = bookElement.TryGetProperty("title", out var titleProp) 
-            ? titleProp.GetString() ?? "Unknown Title" 
+        if (string.IsNullOrWhiteSpace(json)) return null;
+
+        using var doc = JsonDocument.Parse(json);
+        if (!doc.RootElement.TryGetProperty("docs", out var docsProp) || docsProp.ValueKind != JsonValueKind.Array || docsProp.GetArrayLength() == 0)
+        {
+            return null;
+        }
+
+        var docElement = docsProp[0];
+
+        var title = docElement.TryGetProperty("title", out var titleProp) && !string.IsNullOrWhiteSpace(titleProp.GetString())
+            ? titleProp.GetString()!
             : "Unknown Title";
 
-        string? subtitle = bookElement.TryGetProperty("subtitle", out var subProp) 
-            ? subProp.GetString() 
+        string? subtitle = docElement.TryGetProperty("subtitle", out var subProp)
+            ? subProp.GetString()
             : null;
 
         var authorsList = new List<string>();
-        if (bookElement.TryGetProperty("authors", out var authorsProp) && authorsProp.ValueKind == JsonValueKind.Array)
+        if (docElement.TryGetProperty("author_name", out var authorProp) && authorProp.ValueKind == JsonValueKind.Array)
         {
-            foreach (var author in authorsProp.EnumerateArray())
+            foreach (var a in authorProp.EnumerateArray())
             {
-                if (author.TryGetProperty("name", out var nameProp) && !string.IsNullOrWhiteSpace(nameProp.GetString()))
-                {
-                    authorsList.Add(nameProp.GetString()!.Trim());
-                }
+                var name = a.GetString();
+                if (!string.IsNullOrWhiteSpace(name))
+                    authorsList.Add(name.Trim());
             }
         }
         var authors = authorsList.Count > 0 ? string.Join(", ", authorsList) : "Unknown Author";
 
         int pageCount = 0;
-        if (bookElement.TryGetProperty("number_of_pages", out var pagesProp) && pagesProp.TryGetInt32(out var pages))
+        if (docElement.TryGetProperty("number_of_pages_median", out var pagesProp) && pagesProp.TryGetInt32(out var pages))
         {
             pageCount = pages;
         }
 
         string? publisher = null;
-        if (bookElement.TryGetProperty("publishers", out var pubProp) && pubProp.ValueKind == JsonValueKind.Array)
+        if (docElement.TryGetProperty("publisher", out var pubProp) && pubProp.ValueKind == JsonValueKind.Array)
         {
             var pubs = pubProp.EnumerateArray()
-                .Select(p => p.TryGetProperty("name", out var n) ? n.GetString() : null)
-                .Where(n => !string.IsNullOrWhiteSpace(n))
+                .Select(p => p.GetString())
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .Take(2)
                 .ToList();
             if (pubs.Count > 0) publisher = string.Join(", ", pubs);
         }
 
-        string? publishDate = bookElement.TryGetProperty("publish_date", out var dateProp) 
-            ? dateProp.GetString() 
-            : null;
-
-        string? coverUrl = null;
-        if (bookElement.TryGetProperty("cover", out var coverProp) && coverProp.ValueKind == JsonValueKind.Object)
+        string? publishDate = null;
+        if (docElement.TryGetProperty("publish_year", out var pyProp) && pyProp.ValueKind == JsonValueKind.Array)
         {
-            if (coverProp.TryGetProperty("large", out var largeUrl) && !string.IsNullOrWhiteSpace(largeUrl.GetString()))
+            var firstYear = pyProp.EnumerateArray().FirstOrDefault();
+            if (firstYear.ValueKind == JsonValueKind.Number && firstYear.TryGetInt32(out var yr))
             {
-                coverUrl = largeUrl.GetString();
-            }
-            else if (coverProp.TryGetProperty("medium", out var medUrl) && !string.IsNullOrWhiteSpace(medUrl.GetString()))
-            {
-                coverUrl = medUrl.GetString();
-            }
-            else if (coverProp.TryGetProperty("small", out var smallUrl) && !string.IsNullOrWhiteSpace(smallUrl.GetString()))
-            {
-                coverUrl = smallUrl.GetString();
+                publishDate = yr.ToString();
             }
         }
-
-        // Fallback standard OpenLibrary cover URL if not in payload
-        coverUrl ??= $"https://covers.openlibrary.org/b/isbn/{isbnValue}-M.jpg";
-
-        string? description = null;
-        if (bookElement.TryGetProperty("description", out var descProp))
+        else if (docElement.TryGetProperty("publish_date", out var pdProp) && pdProp.ValueKind == JsonValueKind.Array)
         {
-            if (descProp.ValueKind == JsonValueKind.String)
-            {
-                description = descProp.GetString();
-            }
-            else if (descProp.ValueKind == JsonValueKind.Object && descProp.TryGetProperty("value", out var valProp))
-            {
-                description = valProp.GetString();
-            }
+            publishDate = pdProp.EnumerateArray().FirstOrDefault().GetString();
+        }
+
+        string coverUrl;
+        if (docElement.TryGetProperty("cover_i", out var coverProp) && coverProp.TryGetInt64(out var coverId) && coverId > 0)
+        {
+            coverUrl = $"https://covers.openlibrary.org/b/id/{coverId}-M.jpg";
+        }
+        else
+        {
+            coverUrl = $"https://covers.openlibrary.org/b/isbn/{isbnValue}-M.jpg";
         }
 
         return new IsbnBookMetadataDto(
             Title: title,
             Subtitle: subtitle,
             Authors: authors,
+            Isbn: isbnValue,
+            PageCount: pageCount,
+            Publisher: publisher,
+            PublishDate: publishDate,
+            CoverUrl: coverUrl,
+            Description: null
+        );
+    }
+
+    public static IsbnBookMetadataDto? ParseEditionResult(string json, string isbnValue)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return null;
+
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+
+        var title = root.TryGetProperty("title", out var titleProp) && !string.IsNullOrWhiteSpace(titleProp.GetString())
+            ? titleProp.GetString()!
+            : "Unknown Title";
+
+        string? subtitle = root.TryGetProperty("subtitle", out var subProp)
+            ? subProp.GetString()
+            : null;
+
+        int pageCount = 0;
+        if (root.TryGetProperty("number_of_pages", out var pagesProp) && pagesProp.TryGetInt32(out var pages))
+        {
+            pageCount = pages;
+        }
+
+        string? publisher = null;
+        if (root.TryGetProperty("publishers", out var pubProp) && pubProp.ValueKind == JsonValueKind.Array)
+        {
+            var pubs = pubProp.EnumerateArray()
+                .Select(p => p.ValueKind == JsonValueKind.String ? p.GetString() : p.TryGetProperty("name", out var n) ? n.GetString() : null)
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .ToList();
+            if (pubs.Count > 0) publisher = string.Join(", ", pubs);
+        }
+
+        string? publishDate = root.TryGetProperty("publish_date", out var pdProp) ? pdProp.GetString() : null;
+
+        string? description = null;
+        if (root.TryGetProperty("description", out var descProp))
+        {
+            if (descProp.ValueKind == JsonValueKind.String)
+                description = descProp.GetString();
+            else if (descProp.ValueKind == JsonValueKind.Object && descProp.TryGetProperty("value", out var valProp))
+                description = valProp.GetString();
+        }
+
+        var coverUrl = $"https://covers.openlibrary.org/b/isbn/{isbnValue}-M.jpg";
+
+        return new IsbnBookMetadataDto(
+            Title: title,
+            Subtitle: subtitle,
+            Authors: "Unknown Author",
             Isbn: isbnValue,
             PageCount: pageCount,
             Publisher: publisher,

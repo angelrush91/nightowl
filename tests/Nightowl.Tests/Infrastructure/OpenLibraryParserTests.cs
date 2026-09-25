@@ -1,4 +1,3 @@
-using System.Text.Json;
 using FluentAssertions;
 using Nightowl.Infrastructure.ExternalServices;
 using Xunit;
@@ -8,60 +7,80 @@ namespace Nightowl.Tests.Infrastructure;
 public class OpenLibraryParserTests
 {
     [Fact]
-    public void ParseOpenLibraryElement_ShouldExtractAllMetadataCorrectly()
+    public void ParseSearchResult_ShouldExtractAllMetadataCorrectly()
     {
-        // Sample JSON response from OpenLibrary for Clean Code
         var json = """
         {
-            "title": "Clean Code",
-            "subtitle": "A Handbook of Agile Software Craftsmanship",
-            "authors": [
-                { "name": "Robert C. Martin", "url": "https://openlibrary.org/authors/OL2632070A/Robert_C._Martin" }
-            ],
-            "number_of_pages": 464,
-            "publishers": [
-                { "name": "Prentice Hall" }
-            ],
-            "publish_date": "August 1, 2008",
-            "cover": {
-                "small": "https://covers.openlibrary.org/b/id/8231990-S.jpg",
-                "medium": "https://covers.openlibrary.org/b/id/8231990-M.jpg",
-                "large": "https://covers.openlibrary.org/b/id/8231990-L.jpg"
-            },
-            "description": "Even bad code can function. But if code isn't clean, it can bring a development organization to its knees."
+            "numFound": 1,
+            "docs": [
+                {
+                    "title": "Clean Code",
+                    "subtitle": "A Handbook of Agile Software Craftsmanship",
+                    "author_name": ["Robert C. Martin"],
+                    "publisher": ["Prentice Hall"],
+                    "publish_year": [2008],
+                    "number_of_pages_median": 464,
+                    "cover_i": 8065615
+                }
+            ]
         }
         """;
 
-        using var doc = JsonDocument.Parse(json);
-        var result = OpenLibraryIsbnService.ParseOpenLibraryElement(doc.RootElement, "9780132350884");
+        var result = OpenLibraryIsbnService.ParseSearchResult(json, "9780132350884");
 
         result.Should().NotBeNull();
-        result.Title.Should().Be("Clean Code");
+        result!.Title.Should().Be("Clean Code");
         result.Subtitle.Should().Be("A Handbook of Agile Software Craftsmanship");
         result.Authors.Should().Be("Robert C. Martin");
         result.PageCount.Should().Be(464);
         result.Publisher.Should().Be("Prentice Hall");
-        result.PublishDate.Should().Be("August 1, 2008");
-        result.CoverUrl.Should().Be("https://covers.openlibrary.org/b/id/8231990-L.jpg");
-        result.Description.Should().Contain("Even bad code can function");
+        result.PublishDate.Should().Be("2008");
+        result.CoverUrl.Should().Be("https://covers.openlibrary.org/b/id/8065615-M.jpg");
     }
 
     [Fact]
-    public void ParseOpenLibraryElement_WithMinimalData_ShouldProvideSafeDefaults()
+    public void ParseSearchResult_WithMinimalData_ShouldProvideSafeDefaults()
     {
         var json = """
         {
-            "title": "Minimal Book"
+            "numFound": 1,
+            "docs": [
+                {
+                    "title": "Minimal Book"
+                }
+            ]
         }
         """;
 
-        using var doc = JsonDocument.Parse(json);
-        var result = OpenLibraryIsbnService.ParseOpenLibraryElement(doc.RootElement, "9780132350884");
+        var result = OpenLibraryIsbnService.ParseSearchResult(json, "9780132350884");
 
         result.Should().NotBeNull();
-        result.Title.Should().Be("Minimal Book");
+        result!.Title.Should().Be("Minimal Book");
         result.Authors.Should().Be("Unknown Author");
         result.PageCount.Should().Be(0);
         result.CoverUrl.Should().Be("https://covers.openlibrary.org/b/isbn/9780132350884-M.jpg");
+    }
+
+    [Fact]
+    public void ParseEditionResult_ShouldExtractEditionMetadata()
+    {
+        var json = """
+        {
+            "title": "The Pragmatic Programmer",
+            "number_of_pages": 352,
+            "publishers": ["Addison-Wesley"],
+            "publish_date": "October 1999",
+            "description": "Straight from the programming trenches."
+        }
+        """;
+
+        var result = OpenLibraryIsbnService.ParseEditionResult(json, "9780201616224");
+
+        result.Should().NotBeNull();
+        result!.Title.Should().Be("The Pragmatic Programmer");
+        result.PageCount.Should().Be(352);
+        result.Publisher.Should().Be("Addison-Wesley");
+        result.PublishDate.Should().Be("October 1999");
+        result.Description.Should().Be("Straight from the programming trenches.");
     }
 }

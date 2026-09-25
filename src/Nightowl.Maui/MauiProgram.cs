@@ -23,6 +23,16 @@ public static class MauiProgram
         builder.Services.AddMauiBlazorWebView();
         builder.Services.AddMudServices();
 
+#if ANDROID
+        Microsoft.AspNetCore.Components.WebView.Maui.BlazorWebViewHandler.BlazorWebViewMapper.AppendToMapping("AllowCamera", (handler, view) =>
+        {
+            if (handler.PlatformView is global::Android.Webkit.WebView webView)
+            {
+                webView.SetWebChromeClient(new Platforms.Android.PermissionWebChromeClient());
+            }
+        });
+#endif
+
         // Safe SQLite database path in AppData directory
         var dbPath = Path.Combine(FileSystem.AppDataDirectory, "nightowl.db");
         builder.Services.AddNightowlInfrastructure(dbPath);
