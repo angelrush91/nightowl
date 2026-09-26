@@ -9,115 +9,185 @@
     <DialogContent>
         @if (_previewMetadata == null)
         {
-            <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" Centered="true" Class="px-1" @bind-ActivePanelIndex="_activeTab">
-                <MudTabPanel Text="Scan Barcode" Icon="@Icons.Material.Filled.QrCodeScanner">
-                    <div class="d-flex flex-column align-center justify-center pt-2 pb-1">
-                        <div class="scanner-container">
-                            <video id="scannerVideo" @ref="_videoRef" class="scanner-video" playsinline></video>
-                            
-                            @if (_isCameraStarting)
-                            {
-                                <div style="position: absolute; inset: 0; background: rgba(11, 15, 25, 0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; color: white;">
-                                    <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Medium" Class="mb-2" />
-                                    <MudText Typo="Typo.caption">Starting camera...</MudText>
-                                </div>
-                            }
-                            else if (!_isCameraActive)
-                            {
-                                <div style="position: absolute; inset: 0; background: rgba(11, 15, 25, 0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem; text-align: center;">
-                                    <MudIcon Icon="@Icons.Material.Filled.CameraAlt" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
-                                    <MudText Typo="Typo.body2" Class="mb-1" Style="font-weight: 600;">Camera Ready</MudText>
-                                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-3">
-                                        Tap below to activate camera and scan book barcodes.
-                                    </MudText>
-                                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Videocam" Class="rounded-pill px-4 text-none" OnClick="StartCameraAsync">
-                                        Turn On Camera
+            <!-- Top Segmented Switch: Scan vs Type -->
+            <div class="d-flex justify-center mb-3">
+                <MudButtonGroup Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" Class="rounded-pill p-1">
+                    <MudButton Variant="@(_isManualMode ? Variant.Text : Variant.Filled)" 
+                               Color="Color.Primary" 
+                               StartIcon="@Icons.Material.Filled.QrCodeScanner" 
+                               Class="rounded-pill px-3 text-none"
+                               OnClick="SwitchToScanner">
+                        Scan Barcode
+                    </MudButton>
+                    <MudButton Variant="@(_isManualMode ? Variant.Filled : Variant.Text)" 
+                               Color="Color.Primary" 
+                               StartIcon="@Icons.Material.Filled.Keyboard" 
+                               Class="rounded-pill px-3 text-none"
+                               OnClick="SwitchToManual">
+                        Enter ISBN
+                    </MudButton>
+                </MudButtonGroup>
+            </div>
+
+            @if (!_isManualMode)
+            {
+                <!-- Camera Barcode Scanner View -->
+                <div class="d-flex flex-column align-center justify-center">
+                    <div class="scanner-container" @onclick="TriggerRefocusAsync" style="cursor: pointer;">
+                        <video id="scannerVideo" @ref="_videoRef" class="scanner-video" playsinline></video>
+                        
+                        @if (_isCameraStarting)
+                        {
+                            <div style="position: absolute; inset: 0; background: rgba(11, 15, 25, 0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; color: white;">
+                                <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Medium" Class="mb-2" />
+                                <MudText Typo="Typo.caption">Starting camera...</MudText>
+                            </div>
+                        }
+                        else if (!_isCameraActive)
+                        {
+                            <div style="position: absolute; inset: 0; background: rgba(11, 15, 25, 0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem; text-align: center;">
+                                <MudIcon Icon="@Icons.Material.Filled.CameraAlt" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+                                <MudText Typo="Typo.body2" Class="mb-1" Style="font-weight: 600;">Camera Idle</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-3">
+                                    Tap below to turn on the camera.
+                                </MudText>
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Videocam" Class="rounded-pill px-4 text-none" OnClick="StartCameraAsync">
+                                    Turn On Camera
+                                </MudButton>
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- Aiming reticle with animated laser line -->
+                            <div class="scanner-overlay">
+                                <div class="scanner-laser"></div>
+                            </div>
+
+                            <!-- Viewfinder Quick Controls (Torch, Zoom, Refocus) -->
+                            <div style="position: absolute; top: 10px; right: 10px; z-index: 10; display: flex; gap: 6px;">
+                                @if (_isZoomSupported)
+                                {
+                                    <MudButton Variant="Variant.Filled" 
+                                               Color="@(_zoomLevel > 1.0 ? Color.Primary : Color.Default)"
+                                               Size="Size.Small" 
+                                               Class="rounded-pill text-none px-2"
+                                               Style="background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); min-width: 44px; height: 32px; font-weight: 700;"
+                                               OnClick="ToggleZoomAsync">
+                                        @(_zoomLevel > 1.0 ? "2x" : "1x")
                                     </MudButton>
-                                </div>
+                                }
+
+                                @if (_isTorchAvailable)
+                                {
+                                    <MudIconButton Icon="@(_isTorchOn ? Icons.Material.Filled.FlashOn : Icons.Material.Filled.FlashOff)" 
+                                                   Color="@(_isTorchOn ? Color.Warning : Color.Inherit)"
+                                                   Style="background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); width: 32px; height: 32px;"
+                                                   Size="Size.Small"
+                                                   OnClick="ToggleTorchAsync" />
+                                }
+                            </div>
+
+                            <!-- Tap to focus hint badge -->
+                            <div style="position: absolute; bottom: 8px; left: 0; right: 0; text-align: center; pointer-events: none;">
+                                <span style="background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); font-size: 0.68rem; color: #cbd5e1; padding: 2px 10px; border-radius: 10px;">
+                                    Tap screen to focus • Hold 15-20cm away
+                                </span>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Bottom Action: Switch to manual entry if barcode is difficult -->
+                    <div class="d-flex align-center justify-space-between w-100 px-2 mt-3">
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Edit" Class="text-none" OnClick="SwitchToManual">
+                            Type ISBN Manually
+                        </MudButton>
+
+                        @if (_isCameraActive)
+                        {
+                            <MudButton Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small" StartIcon="@Icons.Material.Filled.CenterFocusWeak" Class="text-none" OnClick="TriggerRefocusAsync">
+                                Refocus
+                            </MudButton>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <!-- Manual ISBN Entry View -->
+                <div class="py-2 px-1">
+                    <MudText Typo="Typo.subtitle2" Style="font-weight: 700;" Class="mb-1">Enter Book ISBN</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-3 d-block">
+                        Type the 10 or 13-digit number found above or below the barcode on the back of the book.
+                    </MudText>
+
+                    <div class="d-flex gap-2 align-center mb-3">
+                        <MudTextField @bind-Value="_isbnInput" 
+                                      Label="ISBN Number" 
+                                      Placeholder="e.g. 9780132350884" 
+                                      Variant="Variant.Outlined" 
+                                      Margin="Margin.Dense"
+                                      Clearable="true"
+                                      Adornment="Adornment.Start" 
+                                      AdornmentIcon="@Icons.Material.Filled.Search"
+                                      Class="flex-grow-1"
+                                      OnKeyDown="@HandleKeyDown" />
+
+                        <MudIconButton Icon="@Icons.Material.Filled.ContentPaste" 
+                                       Color="Color.Primary" 
+                                       Variant="Variant.Outlined" 
+                                       Size="Size.Medium"
+                                       title="Paste from clipboard"
+                                       OnClick="PasteFromClipboardAsync" />
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(_isbnInput))
+                    {
+                        <div class="mb-3">
+                            @if (_isIsbnValid)
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Success" Class="d-flex align-center gap-1 font-weight-bold">
+                                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" />
+                                    Valid ISBN format! Ready to search.
+                                </MudText>
                             }
                             else
                             {
-                                <!-- Aiming reticle with animated laser line -->
-                                <div class="scanner-overlay">
-                                    <div class="scanner-laser"></div>
-                                </div>
-
-                                <!-- Flashlight / Torch toggle button -->
-                                @if (_isTorchAvailable)
-                                {
-                                    <div style="position: absolute; top: 12px; right: 12px; z-index: 10;">
-                                        <MudIconButton Icon="@(_isTorchOn ? Icons.Material.Filled.FlashOn : Icons.Material.Filled.FlashOff)" 
-                                                       Color="@(_isTorchOn ? Color.Warning : Color.Inherit)"
-                                                       Style="background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);"
-                                                       Size="Size.Small"
-                                                       OnClick="ToggleTorchAsync" />
-                                    </div>
-                                }
+                                <MudText Typo="Typo.caption" Color="Color.Warning" Class="d-flex align-center gap-1">
+                                    <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" />
+                                    ISBNs are 10 or 13 digits (hyphens optional).
+                                </MudText>
                             }
                         </div>
+                    }
 
-                        <div class="d-flex align-center justify-space-between w-100 px-2 mt-3">
-                            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-flex align-center gap-1">
-                                <MudIcon Icon="@Icons.Material.Filled.CenterFocusStrong" Size="Size.Small" />
-                                Align ISBN barcode in box
-                            </MudText>
+                    <MudButton Variant="Variant.Filled" 
+                               Color="Color.Primary" 
+                               FullWidth="true"
+                               Class="rounded-pill py-2 text-none" 
+                               Disabled="@(!_isIsbnValid || _isLoading)" 
+                               OnClick="LookupIsbnAsync">
+                        @if (_isLoading)
+                        {
+                            <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                            <span class="ms-2">Looking up book details...</span>
+                        }
+                        else
+                        {
+                            <span>Search Book Details</span>
+                        }
+                    </MudButton>
 
-                            @if (_isCameraActive)
-                            {
-                                <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small" StartIcon="@Icons.Material.Filled.VideocamOff" Class="text-none" OnClick="StopCameraAsync">
-                                    Stop Camera
-                                </MudButton>
-                            }
-                        </div>
+                    <div class="d-flex justify-center mt-3">
+                        <MudButton Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small" StartIcon="@Icons.Material.Filled.QrCodeScanner" Class="text-none" OnClick="SwitchToScanner">
+                            Switch back to camera scanner
+                        </MudButton>
                     </div>
-                </MudTabPanel>
-
-                <MudTabPanel Text="Type ISBN" Icon="@Icons.Material.Filled.Keyboard">
-                    <div class="py-3 px-1">
-                        <MudTextField @bind-Value="_isbnInput" 
-                                      Label="ISBN-10 or ISBN-13" 
-                                      Placeholder="e.g. 9780132350884" 
-                                      Variant="Variant.Outlined" 
-                                      Adornment="Adornment.Start" 
-                                      AdornmentIcon="@Icons.Material.Filled.Search"
-                                      Immediate="true"
-                                      HelperText="@_isbnValidationMessage"
-                                      HelperTextOnFocus="true"
-                                      UserAttributes="@(new Dictionary<string, object> { { "inputmode", "numeric" }, { "pattern", "[0-9X-]*" } })"
-                                      OnKeyDown="@HandleKeyDown" />
-
-                        <div class="d-flex gap-2 mt-3">
-                            <MudButton Variant="Variant.Outlined" 
-                                       Color="Color.Default" 
-                                       StartIcon="@Icons.Material.Filled.ContentPaste" 
-                                       Class="rounded-pill text-none flex-grow-1" 
-                                       OnClick="PasteFromClipboardAsync">
-                                Paste ISBN
-                            </MudButton>
-
-                            <MudButton Variant="Variant.Filled" 
-                                       Color="Color.Primary" 
-                                       Class="rounded-pill text-none flex-grow-1" 
-                                       Disabled="@(!_isIsbnValid || _isLoading)" 
-                                       OnClick="LookupIsbnAsync">
-                                @if (_isLoading)
-                                {
-                                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
-                                    <span class="ms-2">Searching...</span>
-                                }
-                                else
-                                {
-                                    <span>Search Online</span>
-                                }
-                            </MudButton>
-                        </div>
-                    </div>
-                </MudTabPanel>
-            </MudTabs>
+                </div>
+            }
         }
         else
         {
-            <!-- Book Preview & Confirmation -->
+            <!-- Book Preview & Confirmation Card -->
             <div class="pa-1">
                 <div class="d-flex gap-3 mb-3">
                     @if (!string.IsNullOrWhiteSpace(_coverUrl))
@@ -189,17 +259,16 @@
 
     private ElementReference _videoRef;
     private DotNetObjectReference<AddBookDialog>? _dotNetRef;
-    private int _activeTab = 0;
+    private bool _isManualMode = false;
     private bool _isCameraActive = false;
     private bool _isCameraStarting = false;
     private bool _isTorchAvailable = false;
     private bool _isTorchOn = false;
+    private bool _isZoomSupported = false;
+    private double _zoomLevel = 1.0;
 
     private string _isbnInput = string.Empty;
     private bool _isIsbnValid => Isbn.TryCreate(_isbnInput, out _);
-    private string _isbnValidationMessage => string.IsNullOrWhiteSpace(_isbnInput) 
-        ? "Enter a 10 or 13-digit ISBN" 
-        : (_isIsbnValid ? "✓ Valid ISBN" : "✕ Invalid ISBN checksum");
 
     private bool _isLoading = false;
     private bool _isSaving = false;
@@ -225,12 +294,25 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (firstRender && !_isManualMode)
         {
-            // Auto-start camera when dialog opens for instant mobile scanning
             await Task.Delay(150);
             await StartCameraAsync();
         }
+    }
+
+    private async Task SwitchToManual()
+    {
+        await StopCameraAsync();
+        _isManualMode = true;
+        StateHasChanged();
+    }
+
+    private async Task SwitchToScanner()
+    {
+        _isManualMode = false;
+        StateHasChanged();
+        await StartCameraAsync();
     }
 
     private async Task StartCameraAsync()
@@ -263,6 +345,11 @@
             if (success)
             {
                 _isTorchAvailable = await JS.InvokeAsync<bool>("nightowlScanner.isTorchAvailable");
+                var zoomCaps = await JS.InvokeAsync<System.Text.Json.JsonElement?>("nightowlScanner.getZoomCapabilities");
+                if (zoomCaps.HasValue && zoomCaps.Value.ValueKind == System.Text.Json.JsonValueKind.Object)
+                {
+                    _isZoomSupported = true;
+                }
                 StateHasChanged();
             }
             else
@@ -284,6 +371,24 @@
         }
     }
 
+    private async Task TriggerRefocusAsync()
+    {
+        if (_isCameraActive)
+        {
+            await JS.InvokeVoidAsync("nightowlScanner.triggerRefocus");
+            Snackbar.Add("Refocusing...", Severity.Normal);
+        }
+    }
+
+    private async Task ToggleZoomAsync()
+    {
+        if (!_isCameraActive) return;
+
+        _zoomLevel = _zoomLevel > 1.0 ? 1.0 : 2.0;
+        await JS.InvokeAsync<bool>("nightowlScanner.setZoom", _zoomLevel);
+        StateHasChanged();
+    }
+
     private async Task ToggleTorchAsync()
     {
         _isTorchOn = !_isTorchOn;
@@ -300,6 +405,7 @@
         {
             _isCameraActive = false;
             _isTorchOn = false;
+            _zoomLevel = 1.0;
             await JS.InvokeVoidAsync("nightowlScanner.stopScanner");
         }
         catch {}
@@ -323,9 +429,9 @@
                 var text = await Clipboard.Default.GetTextAsync();
                 if (!string.IsNullOrWhiteSpace(text))
                 {
-                    // Clean hyphens/spaces
                     _isbnInput = text.Replace("-", "").Replace(" ", "").Trim();
                     Snackbar.Add("Pasted from clipboard", Severity.Info);
+                    StateHasChanged();
                     if (_isIsbnValid)
                     {
                         await LookupIsbnAsync();

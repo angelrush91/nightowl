@@ -7,7 +7,8 @@ namespace Nightowl.Maui;
 [Activity(
     Theme = "@style/Maui.SplashTheme", 
     MainLauncher = true, 
-    ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode | ConfigChanges.ScreenLayout | ConfigChanges.SmallestScreenSize | ConfigChanges.Density)]
+    ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode | ConfigChanges.ScreenLayout | ConfigChanges.SmallestScreenSize | ConfigChanges.Density,
+    WindowSoftInputMode = Android.Views.SoftInput.AdjustPan)]
 public class MainActivity : MauiAppCompatActivity
 {
 }
