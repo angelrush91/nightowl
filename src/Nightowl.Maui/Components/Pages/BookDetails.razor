@@ -310,7 +310,7 @@ else
             { x => x.TotalPages, _book.PageCount }
         };
 
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true, Position = DialogPosition.BottomCenter };
         var dialog = await DialogService.ShowAsync<Nightowl.Maui.Components.Dialogs.UpdateProgressDialog>("Log Reading Session", parameters, options);
         var result = await dialog.Result;
         if (result != null && !result.Canceled)

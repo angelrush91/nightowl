@@ -4,150 +4,167 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
 
-<div class="mb-6">
-    <div class="d-flex align-center justify-space-between mb-4 flex-wrap gap-2">
-        <div>
-            <MudText Typo="Typo.h4" Style="font-weight: 700; letter-spacing: -0.5px;">Welcome Back, Nightowl</MudText>
-            <MudText Typo="Typo.body2" Color="Color.Secondary">Track your reading adventures under the moonlight.</MudText>
-        </div>
-        <MudButton Variant="Variant.Filled" 
-                   Color="Color.Primary" 
-                   StartIcon="@Icons.Material.Filled.QrCodeScanner" 
-                   Class="rounded-pill px-4 text-none"
-                   OnClick="OpenAddDialog">
-            Scan / Add Book
-        </MudButton>
+<div class="mb-4">
+    <!-- Mobile Welcome Header -->
+    <div class="mb-3">
+        <MudText Typo="Typo.h5" Style="font-weight: 700; letter-spacing: -0.3px;">Welcome, Nightowl</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary">Track your reading progress & catalog books.</MudText>
     </div>
 
-    <!-- Quick Metric Cards -->
-    <MudGrid Class="mb-6">
-        <MudItem xs="6" sm="3">
-            <MudPaper Class="pa-4 d-flex align-center gap-3 rounded-lg" Elevation="1">
-                <MudAvatar Color="Color.Primary" Variant="Variant.Filled" Size="Size.Medium">
-                    <MudIcon Icon="@Icons.Material.Filled.MenuBook" />
+    <!-- Quick Metric Cards (2x2 on Mobile Phones) -->
+    <MudGrid Class="mb-4" Spacing="2">
+        <MudItem xs="6">
+            <MudPaper Class="pa-3 d-flex align-center gap-2 rounded-lg" Elevation="1">
+                <MudAvatar Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small">
+                    <MudIcon Icon="@Icons.Material.Filled.MenuBook" Size="Size.Small" />
                 </MudAvatar>
                 <div>
-                    <MudText Typo="Typo.h5" Style="font-weight: 700;">@(_stats?.TotalBooks ?? 0)</MudText>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">Total Books</MudText>
+                    <MudText Typo="Typo.subtitle1" Style="font-weight: 700; line-height: 1.2;">@(_stats?.TotalBooks ?? 0)</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-size: 0.7rem;">Total Books</MudText>
                 </div>
             </MudPaper>
         </MudItem>
-        <MudItem xs="6" sm="3">
-            <MudPaper Class="pa-4 d-flex align-center gap-3 rounded-lg" Elevation="1">
-                <MudAvatar Color="Color.Info" Variant="Variant.Filled" Size="Size.Medium">
-                    <MudIcon Icon="@Icons.Material.Filled.AutoStories" />
+        <MudItem xs="6">
+            <MudPaper Class="pa-3 d-flex align-center gap-2 rounded-lg" Elevation="1">
+                <MudAvatar Color="Color.Info" Variant="Variant.Filled" Size="Size.Small">
+                    <MudIcon Icon="@Icons.Material.Filled.AutoStories" Size="Size.Small" />
                 </MudAvatar>
                 <div>
-                    <MudText Typo="Typo.h5" Style="font-weight: 700;">@(_stats?.BooksCurrentlyReading ?? 0)</MudText>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">Reading Now</MudText>
+                    <MudText Typo="Typo.subtitle1" Style="font-weight: 700; line-height: 1.2;">@(_stats?.BooksCurrentlyReading ?? 0)</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-size: 0.7rem;">Reading Now</MudText>
                 </div>
             </MudPaper>
         </MudItem>
-        <MudItem xs="6" sm="3">
-            <MudPaper Class="pa-4 d-flex align-center gap-3 rounded-lg" Elevation="1">
-                <MudAvatar Color="Color.Success" Variant="Variant.Filled" Size="Size.Medium">
-                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" />
+        <MudItem xs="6">
+            <MudPaper Class="pa-3 d-flex align-center gap-2 rounded-lg" Elevation="1">
+                <MudAvatar Color="Color.Success" Variant="Variant.Filled" Size="Size.Small">
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" />
                 </MudAvatar>
                 <div>
-                    <MudText Typo="Typo.h5" Style="font-weight: 700;">@(_stats?.BooksCompleted ?? 0)</MudText>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">Finished</MudText>
+                    <MudText Typo="Typo.subtitle1" Style="font-weight: 700; line-height: 1.2;">@(_stats?.BooksCompleted ?? 0)</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-size: 0.7rem;">Finished</MudText>
                 </div>
             </MudPaper>
         </MudItem>
-        <MudItem xs="6" sm="3">
-            <MudPaper Class="pa-4 d-flex align-center gap-3 rounded-lg" Elevation="1">
-                <MudAvatar Color="Color.Secondary" Variant="Variant.Filled" Size="Size.Medium">
-                    <MudIcon Icon="@Icons.Material.Filled.FormatListNumbered" />
+        <MudItem xs="6">
+            <MudPaper Class="pa-3 d-flex align-center gap-2 rounded-lg" Elevation="1">
+                <MudAvatar Color="Color.Secondary" Variant="Variant.Filled" Size="Size.Small">
+                    <MudIcon Icon="@Icons.Material.Filled.FormatListNumbered" Size="Size.Small" />
                 </MudAvatar>
                 <div>
-                    <MudText Typo="Typo.h5" Style="font-weight: 700;">@(_stats?.TotalPagesRead ?? 0)</MudText>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">Pages Read</MudText>
+                    <MudText Typo="Typo.subtitle1" Style="font-weight: 700; line-height: 1.2;">@(_stats?.TotalPagesRead ?? 0)</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-size: 0.7rem;">Pages Read</MudText>
                 </div>
             </MudPaper>
         </MudItem>
     </MudGrid>
 
-    <!-- Currently Reading Shelf -->
-    <div class="d-flex align-center justify-space-between mb-3">
-        <MudText Typo="Typo.h6" Style="font-weight: 700;">Currently Reading</MudText>
+    <!-- Currently Reading Section -->
+    <div class="d-flex align-center justify-space-between mb-2">
+        <MudText Typo="Typo.subtitle1" Style="font-weight: 700;">Currently Reading</MudText>
         @if (_currentlyReading.Count > 0)
         {
-            <MudLink Href="library" Color="Color.Primary" Typo="Typo.body2">View all in library</MudLink>
+            <MudLink Href="library" Color="Color.Primary" Typo="Typo.caption" Style="font-weight: 600;">View all</MudLink>
         }
     </div>
 
     @if (_isLoading)
     {
         <div class="d-flex justify-center py-8">
-            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Medium" />
         </div>
     }
     else if (_currentlyReading.Count == 0)
     {
-        <MudPaper Class="pa-8 d-flex flex-column align-center justify-center text-center rounded-lg" Elevation="0" Outlined="true" Style="border-style: dashed;">
-            <MudIcon Icon="@Icons.Material.Filled.MenuBook" Size="Size.Large" Color="Color.Secondary" Class="mb-3" />
-            <MudText Typo="Typo.h6">No books currently in progress</MudText>
-            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
-                Scan the barcode of a book or pick one from your library to start reading.
+        <MudPaper Class="pa-6 d-flex flex-column align-center justify-center text-center rounded-xl" Elevation="0" Outlined="true" Style="border-style: dashed; border-color: rgba(255,255,255,0.15);">
+            <MudIcon Icon="@Icons.Material.Filled.MenuBook" Size="Size.Large" Color="Color.Secondary" Class="mb-2" />
+            <MudText Typo="Typo.subtitle1" Style="font-weight: 600;">No books in progress</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-3">
+                Scan a book's barcode or select one from your library to start tracking.
             </MudText>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Class="rounded-pill text-none" OnClick="OpenAddDialog">
-                Add a Book to Read
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.QrCodeScanner" Class="rounded-pill text-none" OnClick="OpenAddDialog">
+                Scan a Book
             </MudButton>
         </MudPaper>
     }
     else
     {
-        <MudGrid>
+        <div class="d-flex flex-column gap-3">
             @foreach (var book in _currentlyReading)
             {
-                <MudItem xs="12" md="6" lg="4" @key="book.Id">
-                    <MudCard Elevation="2" Class="rounded-lg h-100 d-flex flex-column" Style="overflow: hidden;">
-                        <div class="d-flex pa-4 gap-4 flex-grow-1" style="cursor: pointer;" @onclick="() => NavigateToBook(book.Id)">
-                            @if (!string.IsNullOrWhiteSpace(book.CoverUrl))
-                            {
-                                <img src="@book.CoverUrl" alt="Cover" style="width: 80px; height: 120px; object-fit: cover; border-radius: 8px; flex-shrink: 0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2);" />
-                            }
-                            else
-                            {
-                                <div style="width: 80px; height: 120px; background: #1e293b; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                    <MudIcon Icon="@Icons.Material.Filled.MenuBook" Color="Color.Secondary" />
-                                </div>
-                            }
+                <MudCard Elevation="2" Class="rounded-xl" Style="overflow: hidden;" @key="book.Id">
+                    <div class="pa-3 d-flex gap-3" style="cursor: pointer;" @onclick="() => NavigateToBook(book.Id)">
+                        @if (!string.IsNullOrWhiteSpace(book.CoverUrl))
+                        {
+                            <img src="@book.CoverUrl" alt="Cover" style="width: 72px; height: 108px; object-fit: cover; border-radius: 8px; flex-shrink: 0; box-shadow: 0 4px 8px rgba(0,0,0,0.3);" />
+                        }
+                        else
+                        {
+                            <div style="width: 72px; height: 108px; background: #1e293b; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <MudIcon Icon="@Icons.Material.Filled.MenuBook" Color="Color.Secondary" />
+                            </div>
+                        }
 
-                            <div class="d-flex flex-column justify-space-between flex-grow-1" style="min-width: 0;">
-                                <div>
-                                    <MudText Typo="Typo.subtitle1" Style="font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                        @book.Title
-                                    </MudText>
-                                    <MudText Typo="Typo.body2" Color="Color.Secondary" Style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                        @book.Authors
-                                    </MudText>
-                                </div>
+                        <div class="d-flex flex-column justify-space-between flex-grow-1" style="min-width: 0;">
+                            <div>
+                                <MudText Typo="Typo.subtitle2" Style="font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    @book.Title
+                                </MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary" Style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">
+                                    @book.Authors
+                                </MudText>
+                            </div>
 
-                                <div class="mt-2">
-                                    <div class="d-flex justify-space-between align-center mb-1">
-                                        <MudText Typo="Typo.caption" Color="Color.Secondary">Progress</MudText>
-                                        <MudText Typo="Typo.caption" Style="font-weight: 700;">
-                                            @book.CurrentPage / @book.PageCount (@book.ProgressPercentage.ToString("F0")%)
-                                        </MudText>
-                                    </div>
-                                    <MudProgressLinear Color="Color.Primary" Value="@book.ProgressPercentage" Rounded="true" Size="Size.Medium" />
+                            <div class="mt-2">
+                                <div class="d-flex justify-space-between align-center mb-1">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Progress</MudText>
+                                    <MudText Typo="Typo.caption" Style="font-weight: 700;">
+                                        @book.CurrentPage / @book.PageCount (@book.ProgressPercentage.ToString("F0")%)
+                                    </MudText>
                                 </div>
+                                <MudProgressLinear Color="Color.Primary" Value="@book.ProgressPercentage" Rounded="true" Size="Size.Small" />
                             </div>
                         </div>
+                    </div>
 
-                        <MudDivider />
-
-                        <MudCardActions Class="pa-2 px-3 d-flex justify-space-between align-center">
-                            <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.EditNote" OnClick="() => OpenProgressDialog(book)">
-                                Log Progress
+                    <!-- 1-Tap Quick Progress Buttons for Mobile Users -->
+                    <div class="px-3 pb-2 pt-1 d-flex align-center justify-space-between border-t" style="border-top: 1px solid rgba(255,255,255,0.06);">
+                        <div class="d-flex gap-1 align-center">
+                            <MudButton Variant="Variant.Outlined" 
+                                       Color="Color.Primary" 
+                                       Size="Size.Small" 
+                                       Class="quick-progress-btn text-none"
+                                       OnClick="@(() => QuickAddPages(book, 10))">
+                                +10p
                             </MudButton>
-                            <MudIconButton Icon="@Icons.Material.Filled.ArrowForward" Size="Size.Small" OnClick="() => NavigateToBook(book.Id)" />
-                        </MudCardActions>
-                    </MudCard>
-                </MudItem>
+                            <MudButton Variant="Variant.Outlined" 
+                                       Color="Color.Primary" 
+                                       Size="Size.Small" 
+                                       Class="quick-progress-btn text-none"
+                                       OnClick="@(() => QuickAddPages(book, 25))">
+                                +25p
+                            </MudButton>
+                            @if (book.PageCount > 0 && book.CurrentPage < book.PageCount)
+                            {
+                                <MudButton Variant="Variant.Filled" 
+                                           Color="Color.Success" 
+                                           Size="Size.Small" 
+                                           Class="quick-progress-btn text-none"
+                                           OnClick="@(() => MarkBookFinished(book))">
+                                    Done 🎉
+                                </MudButton>
+                            }
+                        </div>
+
+                        <MudIconButton Icon="@Icons.Material.Filled.EditNote" 
+                                       Size="Size.Small" 
+                                       Color="Color.Inherit" 
+                                       title="Detailed session" 
+                                       OnClick="@(() => OpenProgressDialog(book))" />
+                    </div>
+                </MudCard>
             }
-        </MudGrid>
+        </div>
     }
 </div>
 
@@ -185,9 +202,50 @@
         NavigationManager.NavigateTo($"book/{id}");
     }
 
+    private async Task QuickAddPages(BookSummaryDto book, int pagesToAdd)
+    {
+        try
+        {
+            var newPage = Math.Min(book.PageCount > 0 ? book.PageCount : 99999, book.CurrentPage + pagesToAdd);
+            var updateDto = new UpdateProgressDto(
+                CurrentPage: newPage,
+                Notes: $"Read {pagesToAdd} pages",
+                LogDate: DateTime.UtcNow
+            );
+
+            await BookService.UpdateProgressAsync(book.Id, updateDto);
+            Snackbar.Add($"Updated '{book.Title}' to page {newPage}", Severity.Success);
+            await LoadDataAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Update failed: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task MarkBookFinished(BookSummaryDto book)
+    {
+        try
+        {
+            var updateDto = new UpdateProgressDto(
+                CurrentPage: book.PageCount,
+                Notes: "Finished reading!",
+                LogDate: DateTime.UtcNow
+            );
+
+            await BookService.UpdateProgressAsync(book.Id, updateDto);
+            Snackbar.Add($"Congratulations on finishing '{book.Title}'! 🎉", Severity.Success);
+            await LoadDataAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to complete book: {ex.Message}", Severity.Error);
+        }
+    }
+
     private async Task OpenAddDialog()
     {
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true, Position = DialogPosition.BottomCenter };
         var dialog = await DialogService.ShowAsync<Nightowl.Maui.Components.Dialogs.AddBookDialog>("Catalog a Book", options);
         var result = await dialog.Result;
         if (result != null && !result.Canceled)
@@ -206,7 +264,7 @@
             { x => x.TotalPages, book.PageCount }
         };
 
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true, Position = DialogPosition.BottomCenter };
         var dialog = await DialogService.ShowAsync<Nightowl.Maui.Components.Dialogs.UpdateProgressDialog>("Log Reading Session", parameters, options);
         var result = await dialog.Result;
         if (result != null && !result.Canceled)

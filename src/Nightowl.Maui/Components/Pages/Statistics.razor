@@ -2,105 +2,106 @@
 @inject IBookService BookService
 @inject ISnackbar Snackbar
 
-<div class="mb-6">
-    <div class="mb-4">
-        <MudText Typo="Typo.h4" Style="font-weight: 700; letter-spacing: -0.5px;">Reading Statistics</MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary">Insights into your reading habits and library journey.</MudText>
+<div class="mb-4">
+    <div class="mb-3">
+        <MudText Typo="Typo.h5" Style="font-weight: 700; letter-spacing: -0.3px;">Reading Statistics</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary">Insights into your reading habits & milestone stats.</MudText>
     </div>
 
     @if (_isLoading)
     {
-        <div class="d-flex justify-center py-12">
-            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+        <div class="d-flex justify-center py-10">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Medium" />
         </div>
     }
     else if (_stats == null || _stats.TotalBooks == 0)
     {
-        <MudPaper Class="pa-8 text-center rounded-lg" Elevation="0" Outlined="true" Style="border-style: dashed;">
-            <MudIcon Icon="@Icons.Material.Filled.Analytics" Size="Size.Large" Color="Color.Secondary" Class="mb-3" />
-            <MudText Typo="Typo.h6">No Reading Data Yet</MudText>
-            <MudText Typo="Typo.body2" Color="Color.Secondary">Start adding books and tracking your reading to see analytics here.</MudText>
+        <MudPaper Class="pa-6 text-center rounded-xl" Elevation="0" Outlined="true" Style="border-style: dashed; border-color: rgba(255,255,255,0.15);">
+            <MudIcon Icon="@Icons.Material.Filled.Analytics" Size="Size.Large" Color="Color.Secondary" Class="mb-2" />
+            <MudText Typo="Typo.subtitle1" Style="font-weight: 600;">No reading data yet</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Start logging your reading sessions to see analytics here.</MudText>
         </MudPaper>
     }
     else
     {
-        <MudGrid Class="mb-6">
-            <MudItem xs="12" sm="6" md="3">
-                <MudCard Elevation="2" Class="rounded-lg pa-4 h-100">
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">Completion Rate</MudText>
-                    <MudText Typo="Typo.h4" Color="Color.Primary" Style="font-weight: 700;">@_stats.CompletionPercentage%</MudText>
-                    <MudProgressLinear Color="Color.Primary" Value="@_stats.CompletionPercentage" Rounded="true" Class="mt-2" />
-                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1 d-block">
-                        @_stats.BooksCompleted of @_stats.TotalBooks books finished
+        <!-- Mobile 2x2 Stat Cards -->
+        <MudGrid Class="mb-3" Spacing="2">
+            <MudItem xs="6">
+                <MudCard Elevation="2" Class="rounded-xl pa-3 h-100">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-size: 0.72rem;">Completion Rate</MudText>
+                    <MudText Typo="Typo.h5" Color="Color.Primary" Style="font-weight: 700;">@_stats.CompletionPercentage%</MudText>
+                    <MudProgressLinear Color="Color.Primary" Value="@_stats.CompletionPercentage" Rounded="true" Size="Size.Small" Class="mt-1" />
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1 d-block" Style="font-size: 0.68rem;">
+                        @_stats.BooksCompleted of @_stats.TotalBooks finished
                     </MudText>
                 </MudCard>
             </MudItem>
 
-            <MudItem xs="12" sm="6" md="3">
-                <MudCard Elevation="2" Class="rounded-lg pa-4 h-100">
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">Total Pages Read</MudText>
-                    <MudText Typo="Typo.h4" Color="Color.Success" Style="font-weight: 700;">@_stats.TotalPagesRead.ToString("N0")</MudText>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2 d-block">
-                        Pages across all your books & sessions
+            <MudItem xs="6">
+                <MudCard Elevation="2" Class="rounded-xl pa-3 h-100">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-size: 0.72rem;">Total Pages Read</MudText>
+                    <MudText Typo="Typo.h5" Color="Color.Success" Style="font-weight: 700;">@_stats.TotalPagesRead.ToString("N0")</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1 d-block" Style="font-size: 0.68rem;">
+                        Pages across all sessions
                     </MudText>
                 </MudCard>
             </MudItem>
 
-            <MudItem xs="12" sm="6" md="3">
-                <MudCard Elevation="2" Class="rounded-lg pa-4 h-100">
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">Active Reading</MudText>
-                    <MudText Typo="Typo.h4" Color="Color.Info" Style="font-weight: 700;">@_stats.BooksCurrentlyReading</MudText>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2 d-block">
-                        Books currently in progress
+            <MudItem xs="6">
+                <MudCard Elevation="2" Class="rounded-xl pa-3 h-100">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-size: 0.72rem;">Active Reading</MudText>
+                    <MudText Typo="Typo.h5" Color="Color.Info" Style="font-weight: 700;">@_stats.BooksCurrentlyReading</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1 d-block" Style="font-size: 0.68rem;">
+                        Books in progress
                     </MudText>
                 </MudCard>
             </MudItem>
 
-            <MudItem xs="12" sm="6" md="3">
-                <MudCard Elevation="2" Class="rounded-lg pa-4 h-100">
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">Average Rating</MudText>
-                    <div class="d-flex align-center gap-1 mt-1">
-                        <MudText Typo="Typo.h4" Color="Color.Warning" Style="font-weight: 700;">
+            <MudItem xs="6">
+                <MudCard Elevation="2" Class="rounded-xl pa-3 h-100">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-size: 0.72rem;">Average Rating</MudText>
+                    <div class="d-flex align-center gap-1">
+                        <MudText Typo="Typo.h5" Color="Color.Warning" Style="font-weight: 700;">
                             @(_stats.AverageRating?.ToString("F1") ?? "—")
                         </MudText>
                         @if (_stats.AverageRating.HasValue)
                         {
-                            <MudIcon Icon="@Icons.Material.Filled.Star" Color="Color.Warning" Size="Size.Medium" />
+                            <MudIcon Icon="@Icons.Material.Filled.Star" Color="Color.Warning" Size="Size.Small" />
                         }
                     </div>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2 d-block">
-                        Across rated books in library
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1 d-block" Style="font-size: 0.68rem;">
+                        Across rated books
                     </MudText>
                 </MudCard>
             </MudItem>
         </MudGrid>
 
         <!-- Library Breakdown by Status -->
-        <MudCard Elevation="2" Class="rounded-lg pa-4">
-            <MudText Typo="Typo.h6" Style="font-weight: 700;" Class="mb-3">Library Breakdown</MudText>
+        <MudCard Elevation="2" Class="rounded-xl pa-4">
+            <MudText Typo="Typo.subtitle1" Style="font-weight: 700;" Class="mb-3">Library Breakdown</MudText>
             
             <div class="mb-3">
                 <div class="d-flex justify-space-between align-center mb-1">
-                    <MudText Typo="Typo.body2">Completed</MudText>
-                    <MudText Typo="Typo.body2" Style="font-weight: 600;">@_stats.BooksCompleted (@GetPercentage(_stats.BooksCompleted, _stats.TotalBooks)%)</MudText>
+                    <MudText Typo="Typo.caption">Completed</MudText>
+                    <MudText Typo="Typo.caption" Style="font-weight: 600;">@_stats.BooksCompleted (@GetPercentage(_stats.BooksCompleted, _stats.TotalBooks)%)</MudText>
                 </div>
-                <MudProgressLinear Color="Color.Success" Value="@GetPercentage(_stats.BooksCompleted, _stats.TotalBooks)" Rounded="true" Size="Size.Medium" />
+                <MudProgressLinear Color="Color.Success" Value="@GetPercentage(_stats.BooksCompleted, _stats.TotalBooks)" Rounded="true" Size="Size.Small" />
             </div>
 
             <div class="mb-3">
                 <div class="d-flex justify-space-between align-center mb-1">
-                    <MudText Typo="Typo.body2">Currently Reading</MudText>
-                    <MudText Typo="Typo.body2" Style="font-weight: 600;">@_stats.BooksCurrentlyReading (@GetPercentage(_stats.BooksCurrentlyReading, _stats.TotalBooks)%)</MudText>
+                    <MudText Typo="Typo.caption">Currently Reading</MudText>
+                    <MudText Typo="Typo.caption" Style="font-weight: 600;">@_stats.BooksCurrentlyReading (@GetPercentage(_stats.BooksCurrentlyReading, _stats.TotalBooks)%)</MudText>
                 </div>
-                <MudProgressLinear Color="Color.Info" Value="@GetPercentage(_stats.BooksCurrentlyReading, _stats.TotalBooks)" Rounded="true" Size="Size.Medium" />
+                <MudProgressLinear Color="Color.Info" Value="@GetPercentage(_stats.BooksCurrentlyReading, _stats.TotalBooks)" Rounded="true" Size="Size.Small" />
             </div>
 
             <div>
                 <div class="d-flex justify-space-between align-center mb-1">
-                    <MudText Typo="Typo.body2">Want to Read</MudText>
-                    <MudText Typo="Typo.body2" Style="font-weight: 600;">@_stats.BooksWantToRead (@GetPercentage(_stats.BooksWantToRead, _stats.TotalBooks)%)</MudText>
+                    <MudText Typo="Typo.caption">Want to Read</MudText>
+                    <MudText Typo="Typo.caption" Style="font-weight: 600;">@_stats.BooksWantToRead (@GetPercentage(_stats.BooksWantToRead, _stats.TotalBooks)%)</MudText>
                 </div>
-                <MudProgressLinear Color="Color.Secondary" Value="@GetPercentage(_stats.BooksWantToRead, _stats.TotalBooks)" Rounded="true" Size="Size.Medium" />
+                <MudProgressLinear Color="Color.Secondary" Value="@GetPercentage(_stats.BooksWantToRead, _stats.TotalBooks)" Rounded="true" Size="Size.Small" />
             </div>
         </MudCard>
     }

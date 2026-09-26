@@ -1,44 +1,62 @@
 @inject IBookService BookService
 @inject ISnackbar Snackbar
 
-<MudDialog>
+<MudDialog Class="nightowl-dialog">
     <DialogContent>
-        <div class="pa-2">
-            <MudText Typo="Typo.subtitle1" Style="font-weight: 700;">@BookTitle</MudText>
+        <div class="pa-1">
+            <MudText Typo="Typo.subtitle1" Style="font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                @BookTitle
+            </MudText>
             <MudText Typo="Typo.caption" Color="Color.Secondary">Total: @TotalPages pages</MudText>
 
-            <div class="mt-4">
-                <MudText Typo="Typo.body2" Class="mb-1">
-                    Current Page: <strong>@_currentPage</strong> / @TotalPages (@ProgressPercentage.ToString("F1")%)
-                </MudText>
-                
+            <div class="mt-3">
+                <div class="d-flex justify-space-between align-center mb-1">
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Reading Progress</MudText>
+                    <MudText Typo="Typo.body2" Style="font-weight: 700;">
+                        @_currentPage / @TotalPages (@ProgressPercentage.ToString("F0")%)
+                    </MudText>
+                </div>
+
                 @if (TotalPages > 0)
                 {
-                    <MudSlider @bind-Value="_currentPage" Min="0" Max="@TotalPages" Color="Color.Primary" ValueLabel="true" Class="my-3" />
+                    <MudSlider @bind-Value="_currentPage" Min="0" Max="@TotalPages" Color="Color.Primary" ValueLabel="true" Class="my-2" />
                 }
 
-                <MudNumericField @bind-Value="_currentPage" 
-                                 Label="Page Number" 
-                                 Variant="Variant.Outlined" 
-                                 Margin="Margin.Dense" 
-                                 Min="0" 
-                                 Max="@(TotalPages > 0 ? TotalPages : 99999)" 
-                                 Class="mb-3" />
-
-                <!-- Quick Increment Chips -->
-                <div class="d-flex gap-2 flex-wrap mb-4">
-                    <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="() => AddPages(10)">+10 pages</MudChip>
-                    <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="() => AddPages(25)">+25 pages</MudChip>
-                    <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="() => AddPages(50)">+50 pages</MudChip>
+                <!-- Quick Increment Chips (Thumb-Friendly) -->
+                <div class="d-flex gap-2 flex-wrap my-3">
+                    <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="() => AddPages(10)">+10p</MudChip>
+                    <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="() => AddPages(25)">+25p</MudChip>
+                    <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="() => AddPages(50)">+50p</MudChip>
                     @if (TotalPages > 0)
                     {
                         <MudChip T="string" Variant="Variant.Filled" Color="Color.Success" Size="Size.Small" OnClick="MarkFinished">Finished! 🎉</MudChip>
                     }
                 </div>
 
+                <!-- Stepper Page Input -->
+                <div class="d-flex gap-2 align-center mb-3">
+                    <MudIconButton Icon="@Icons.Material.Filled.RemoveCircleOutline" 
+                                   Color="Color.Primary" 
+                                   OnClick="@(() => AddPages(-1))" 
+                                   Disabled="@(_currentPage <= 0)" />
+                    
+                    <MudNumericField @bind-Value="_currentPage" 
+                                     Label="Current Page" 
+                                     Variant="Variant.Outlined" 
+                                     Margin="Margin.Dense" 
+                                     Min="0" 
+                                     Max="@(TotalPages > 0 ? TotalPages : 99999)" 
+                                     Class="flex-grow-1" />
+
+                    <MudIconButton Icon="@Icons.Material.Filled.AddCircleOutline" 
+                                   Color="Color.Primary" 
+                                   OnClick="@(() => AddPages(1))" 
+                                   Disabled="@(TotalPages > 0 && _currentPage >= TotalPages)" />
+                </div>
+
                 <MudTextField @bind-Value="_notes" 
                               Label="Session Notes (optional)" 
-                              Placeholder="What happened or what did you think of today's reading?" 
+                              Placeholder="Any thoughts, quotes, or chapter notes..." 
                               Variant="Variant.Outlined" 
                               Lines="2" 
                               Margin="Margin.Dense" />
@@ -47,8 +65,9 @@
     </DialogContent>
 
     <DialogActions>
-        <MudButton Variant="Variant.Text" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="_isSaving" OnClick="SaveProgressAsync">
+        <MudButton Variant="Variant.Text" Color="Color.Default" Class="text-none" OnClick="Cancel">Cancel</MudButton>
+        <MudSpacer />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="rounded-pill px-4 text-none" Disabled="_isSaving" OnClick="SaveProgressAsync">
             @if (_isSaving)
             {
                 <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="ms-n1" />
@@ -56,7 +75,7 @@
             }
             else
             {
-                <span>Update Progress</span>
+                <span>Save Progress</span>
             }
         </MudButton>
     </DialogActions>
@@ -93,7 +112,10 @@
 
     private void AddPages(int count)
     {
-        _currentPage = TotalPages > 0 ? Math.Min(TotalPages, _currentPage + count) : _currentPage + count;
+        var target = _currentPage + count;
+        if (target < 0) target = 0;
+        if (TotalPages > 0 && target > TotalPages) target = TotalPages;
+        _currentPage = target;
     }
 
     private void MarkFinished()
@@ -116,7 +138,7 @@
             );
 
             await BookService.UpdateProgressAsync(BookId, updateDto);
-            Snackbar.Add("Reading progress logged!", Severity.Success);
+            Snackbar.Add("Reading session logged!", Severity.Success);
             MudDialog.Close(DialogResult.Ok(true));
         }
         catch (Exception ex)

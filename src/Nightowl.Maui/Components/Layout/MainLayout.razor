@@ -1,64 +1,105 @@
 @inherits LayoutComponentBase
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
 @using Nightowl.Maui.Theme
 @using Nightowl.Maui.Components.Dialogs
 
 <MudThemeProvider Theme="_theme" @bind-IsDarkMode="_isDarkMode" />
 <MudPopoverProvider />
-<MudDialogProvider FullWidth="true" MaxWidth="MaxWidth.Medium" CloseButton="true" BackdropClick="false" />
+<MudDialogProvider FullWidth="true" MaxWidth="MaxWidth.Small" CloseButton="false" BackdropClick="true" Position="DialogPosition.BottomCenter" />
 <MudSnackbarProvider />
 
-<MudLayout>
-    <MudAppBar Elevation="1" Dense="true" Class="px-3" Style="backdrop-filter: blur(10px);">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
-        <MudText Typo="Typo.h6" Class="ml-2 d-flex align-center" Style="font-family: 'Cinzel', serif; font-weight: 700; letter-spacing: 1.5px;">
-            🦉 NIGHTOWL
+<MudLayout Class="d-flex flex-column h-100">
+    <!-- Android Native-Style Top App Bar -->
+    <MudAppBar Elevation="0" Dense="true" Class="nightowl-appbar px-3">
+        @if (IsDetailPage)
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" 
+                           Color="Color.Inherit" 
+                           Edge="Edge.Start" 
+                           OnClick="GoBack" />
+        }
+        else
+        {
+            <MudAvatar Color="Color.Primary" Size="Size.Small" Class="mr-2">🦉</MudAvatar>
+        }
+
+        <MudText Typo="Typo.subtitle1" Class="d-flex align-center" Style="font-family: 'Cinzel', serif; font-weight: 700; letter-spacing: 1.5px;">
+            NIGHTOWL
         </MudText>
+
         <MudSpacer />
-        <MudButton Variant="Variant.Filled" 
-                   Color="Color.Primary" 
-                   StartIcon="@Icons.Material.Filled.QrCodeScanner" 
-                   Size="Size.Small" 
-                   Class="rounded-pill mr-2 text-none"
-                   OnClick="OpenAddBookDialog">
-            Add Book
-        </MudButton>
+
         <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)" 
                        Color="Color.Inherit" 
+                       Size="Size.Small"
                        OnClick="@ToggleDarkMode" 
-                       title="@(_isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode")" />
+                       title="@(_isDarkMode ? "Light Mode" : "Dark Mode")" />
     </MudAppBar>
 
-    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" Variant="DrawerVariant.Responsive">
-        <MudDrawerHeader Class="d-flex align-center gap-2 py-4">
-            <MudAvatar Color="Color.Primary" Size="Size.Medium">🦉</MudAvatar>
-            <div>
-                <MudText Typo="Typo.subtitle1" Style="font-weight: 700; line-height: 1.2;">Nightowl</MudText>
-                <MudText Typo="Typo.caption" Color="Color.Secondary">Personal Book Tracker</MudText>
-            </div>
-        </MudDrawerHeader>
-        <MudDivider Class="mb-2" />
-        <MudNavMenu Rounded="true" Margin="Margin.Dense" Color="Color.Primary">
-            <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
-            <MudNavLink Href="library" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AutoStories">My Library</MudNavLink>
-            <MudNavLink Href="stats" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Analytics">Reading Stats</MudNavLink>
-        </MudNavMenu>
-    </MudDrawer>
-
-    <MudMainContent Class="pa-4 pa-sm-6">
+    <!-- Main Scrollable Content Area -->
+    <MudMainContent Class="nightowl-content pt-3">
         @Body
     </MudMainContent>
+
+    <!-- Floating Action Button: 1-Tap Barcode Scanner -->
+    <MudFab Color="Color.Primary" 
+            StartIcon="@Icons.Material.Filled.QrCodeScanner" 
+            Label="Scan" 
+            Size="Size.Medium" 
+            Class="nightowl-fab rounded-pill text-none"
+            OnClick="OpenAddBookDialog" />
+
+    <!-- Android Bottom Navigation Bar -->
+    <nav class="nightowl-bottom-nav">
+        <div class="nightowl-nav-item @(IsActive("") ? "active" : "")" @onclick="@(() => NavigateTo(""))">
+            <div class="nav-icon-pill">
+                <MudIcon Icon="@(IsActive("") ? Icons.Material.Filled.Dashboard : Icons.Material.Outlined.Dashboard)" Size="Size.Medium" />
+            </div>
+            <span class="nav-label">Home</span>
+        </div>
+
+        <div class="nightowl-nav-item @(IsActive("library") ? "active" : "")" @onclick="@(() => NavigateTo("library"))">
+            <div class="nav-icon-pill">
+                <MudIcon Icon="@(IsActive("library") ? Icons.Material.Filled.AutoStories : Icons.Material.Outlined.AutoStories)" Size="Size.Medium" />
+            </div>
+            <span class="nav-label">Library</span>
+        </div>
+
+        <div class="nightowl-nav-item @(IsActive("stats") ? "active" : "")" @onclick="@(() => NavigateTo("stats"))">
+            <div class="nav-icon-pill">
+                <MudIcon Icon="@(IsActive("stats") ? Icons.Material.Filled.Analytics : Icons.Material.Outlined.Analytics)" Size="Size.Medium" />
+            </div>
+            <span class="nav-label">Stats</span>
+        </div>
+    </nav>
 </MudLayout>
 
 @code {
-    private bool _drawerOpen = true;
     private bool _isDarkMode = true;
     private readonly MudTheme _theme = NightowlTheme.CreateTheme();
 
-    private void ToggleDrawer()
+    private bool IsDetailPage => NavigationManager.Uri.Contains("/book/");
+
+    private bool IsActive(string route)
     {
-        _drawerOpen = !_drawerOpen;
+        var relative = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        if (string.IsNullOrEmpty(route))
+        {
+            return string.IsNullOrEmpty(relative) || relative == "/";
+        }
+        return relative.StartsWith(route, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void NavigateTo(string route)
+    {
+        NavigationManager.NavigateTo(route);
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo("library");
     }
 
     private void ToggleDarkMode()
@@ -68,12 +109,20 @@
 
     private async Task OpenAddBookDialog()
     {
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var options = new DialogOptions 
+        { 
+            CloseOnEscapeKey = true, 
+            MaxWidth = MaxWidth.Small, 
+            FullWidth = true,
+            Position = DialogPosition.BottomCenter
+        };
         var dialog = await DialogService.ShowAsync<AddBookDialog>("Catalog a Book", options);
         var result = await dialog.Result;
         if (result != null && !result.Canceled)
         {
-            Snackbar.Add("Book successfully added to your library!", Severity.Success);
+            Snackbar.Add("Book successfully cataloged in your library!", Severity.Success);
+            // Refresh current page if needed
+            StateHasChanged();
         }
     }
 }
