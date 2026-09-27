@@ -24,6 +24,10 @@ public static class DependencyInjection
         // Initializer
         services.AddScoped<DatabaseInitializer>();
 
+        // Database Backup Service
+        services.AddSingleton<IDatabaseBackupService>(sp => 
+            new DatabaseBackupService(sqliteDbPath, sp.GetService<Microsoft.Extensions.Logging.ILogger<DatabaseBackupService>>()));
+
         // Memory Cache for ISBN metadata resolution
         services.AddMemoryCache();
 

@@ -152,7 +152,12 @@
             Position = DialogPosition.Center
         };
         var dialog = await DialogService.ShowAsync<OptionsMenuDialog>("Options", parameters, options);
-        await dialog.Result;
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled && result.Data is bool restored && restored)
+        {
+            NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+            return;
+        }
         StateHasChanged();
     }
 
