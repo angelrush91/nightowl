@@ -1,0 +1,151 @@
+@using Nightowl.Infrastructure.Logging
+@inject IDevLogService DevLogService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<MudDialog Class="nightowl-dialog">
+    <TitleContent>
+        <div class="d-flex align-center justify-space-between w-100 pr-2">
+            <div class="d-flex align-center gap-2">
+                <MudIcon Icon="@Icons.Material.Filled.Settings" Color="Color.Primary" />
+                <MudText Typo="Typo.subtitle1" Style="font-weight: 700;">
+                    Options & Settings
+                </MudText>
+            </div>
+            <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="Close" />
+        </div>
+    </TitleContent>
+
+    <DialogContent>
+        <div class="d-flex flex-column gap-3 py-1">
+            <!-- App Info Card -->
+            <div class="p-3 rounded-lg border border-slate-800 bg-slate-900/60 d-flex align-center justify-space-between">
+                <div>
+                    <div class="d-flex align-center gap-2">
+                        <span style="font-size: 1.2rem;">🦉</span>
+                        <MudText Typo="Typo.subtitle2" Style="font-weight: 700;">Nightowl</MudText>
+                    </div>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        Book Cataloging & Reading Tracker
+                    </MudText>
+                </div>
+                <MudChip T="string" Color="Color.Primary" Size="Size.Small" Variant="Variant.Outlined">
+                    v1.0.6
+                </MudChip>
+            </div>
+
+            <!-- Appearance Section -->
+            <div class="p-3 rounded-lg border border-slate-800 bg-slate-900/40">
+                <div class="d-flex align-center justify-space-between">
+                    <div>
+                        <MudText Typo="Typo.body2" Style="font-weight: 600;">Theme</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                            Toggle dark or light mode
+                        </MudText>
+                    </div>
+                    <MudSwitch @bind-Value="IsDarkMode" 
+                               Color="Color.Primary" 
+                               ThumbIcon="@(IsDarkMode ? Icons.Material.Filled.DarkMode : Icons.Material.Filled.LightMode)" />
+                </div>
+            </div>
+
+            <!-- Developer Mode Section -->
+            <div class="p-3 rounded-lg border border-slate-800" style="@(DevLogService.IsDevModeEnabled ? "background: rgba(30, 41, 59, 0.7); border-color: #38bdf8;" : "background: rgba(15, 23, 42, 0.4);")">
+                <div class="d-flex align-center justify-space-between mb-2">
+                    <div class="d-flex align-center gap-2">
+                        <MudIcon Icon="@Icons.Material.Filled.Terminal" Color="@(DevLogService.IsDevModeEnabled ? Color.Info : Color.Default)" Size="Size.Small" />
+                        <div>
+                            <MudText Typo="Typo.body2" Style="font-weight: 700;">
+                                Developer Mode
+                            </MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                Inspect Serilog logs and diagnostics
+                            </MudText>
+                        </div>
+                    </div>
+                    <MudSwitch T="bool" 
+                               Value="@DevLogService.IsDevModeEnabled" 
+                               ValueChanged="OnDevModeToggled" 
+                               Color="Color.Info" />
+                </div>
+
+                @if (DevLogService.IsDevModeEnabled)
+                {
+                    <div class="mt-3 pt-2 border-t border-slate-700/60 d-flex flex-column gap-2">
+                        <MudButton Variant="Variant.Filled" 
+                                   Color="Color.Info" 
+                                   FullWidth="true"
+                                   StartIcon="@Icons.Material.Filled.BugReport" 
+                                   Class="rounded-pill text-none"
+                                   OnClick="OpenLogViewerAsync">
+                            Review Logs (In-App)
+                        </MudButton>
+
+                        <div class="d-flex align-center justify-space-between text-xs px-1" style="font-size: 0.7rem; color: #94a3b8;">
+                            <span>Log Sink: In-Memory & Rolling Daily File</span>
+                            <MudLink Typo="Typo.caption" Underline="Underline.Always" Color="Color.Secondary" OnClick="CopyLogDirPathAsync">
+                                Copy path
+                            </MudLink>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="rounded-pill px-4 text-none" OnClick="Close">
+            Done
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter]
+    public bool IsDarkMode { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IsDarkModeChanged { get; set; }
+
+    private async Task OnDevModeToggled(bool enabled)
+    {
+        DevLogService.IsDevModeEnabled = enabled;
+        if (enabled)
+        {
+            Snackbar.Add("Developer Mode enabled! You can now review logs.", Severity.Info);
+        }
+        else
+        {
+            Snackbar.Add("Developer Mode disabled.", Severity.Normal);
+        }
+        StateHasChanged();
+    }
+
+    private async Task OpenLogViewerAsync()
+    {
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            Position = DialogPosition.Center
+        };
+
+        await DialogService.ShowAsync<DevLogsDialog>("Developer Logs", options);
+    }
+
+    private async Task CopyLogDirPathAsync()
+    {
+        var path = DevLogService.GetLogDirectory();
+        await Clipboard.Default.SetTextAsync(path);
+        Snackbar.Add("Log folder path copied!", Severity.Success);
+    }
+
+    private void Close()
+    {
+        MudDialog.Close();
+    }
+}

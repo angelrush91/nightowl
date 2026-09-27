@@ -2,8 +2,10 @@
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
+@inject Nightowl.Infrastructure.Logging.IDevLogService DevLogService
 @using Nightowl.Maui.Theme
 @using Nightowl.Maui.Components.Dialogs
+@using Nightowl.Infrastructure.Logging
 
 <MudThemeProvider Theme="_theme" @bind-IsDarkMode="_isDarkMode" />
 <MudPopoverProvider />
@@ -31,11 +33,20 @@
 
         <MudSpacer />
 
-        <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)" 
+        @if (DevLogService.IsDevModeEnabled)
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.BugReport" 
+                           Color="Color.Info" 
+                           Size="Size.Small" 
+                           OnClick="OpenDevLogsDialog" 
+                           title="Review Logs (Dev Mode)" />
+        }
+
+        <MudIconButton Icon="@Icons.Material.Filled.MoreVert" 
                        Color="Color.Inherit" 
-                       Size="Size.Small"
-                       OnClick="@ToggleDarkMode" 
-                       title="@(_isDarkMode ? "Light Mode" : "Dark Mode")" />
+                       Size="Size.Small" 
+                       OnClick="OpenOptionsMenu" 
+                       title="Options & Settings" />
     </MudAppBar>
 
     <!-- Main Scrollable Content Area -->
@@ -124,5 +135,36 @@
             // Refresh current page if needed
             StateHasChanged();
         }
+    }
+
+    private async Task OpenOptionsMenu()
+    {
+        var parameters = new DialogParameters
+        {
+            { "IsDarkMode", _isDarkMode },
+            { "IsDarkModeChanged", EventCallback.Factory.Create<bool>(this, (dark) => { _isDarkMode = dark; StateHasChanged(); }) }
+        };
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            Position = DialogPosition.Center
+        };
+        var dialog = await DialogService.ShowAsync<OptionsMenuDialog>("Options", parameters, options);
+        await dialog.Result;
+        StateHasChanged();
+    }
+
+    private async Task OpenDevLogsDialog()
+    {
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            Position = DialogPosition.Center
+        };
+        await DialogService.ShowAsync<DevLogsDialog>("Developer Logs", options);
     }
 }
