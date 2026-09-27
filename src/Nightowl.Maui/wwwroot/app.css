@@ -171,3 +171,57 @@ button, .mud-button-root, .mud-chip, .mud-bottom-nav, .mud-card, .mud-appbar, a,
         border-radius: 16px !important;
     }
 }
+
+/* Category Filter Bar (Horizontal Scroll, Non-wrapping, Full-width pills) */
+.filter-bar-scroll {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    padding-bottom: 4px;
+}
+
+.filter-bar-scroll::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+.filter-pill-btn {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+    min-width: max-content !important;
+    font-weight: 600 !important;
+    font-size: 0.8rem !important;
+    height: 32px !important;
+    border-radius: 16px !important;
+    padding: 0 14px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+.filter-pill-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.filter-pill-badge.active {
+    background: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+}
+
+.filter-pill-badge.inactive {
+    background: rgba(255, 255, 255, 0.1);
+    color: #94a3b8;
+}

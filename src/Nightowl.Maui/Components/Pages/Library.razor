@@ -23,36 +23,43 @@
                       OnKeyUp="@HandleSearch" />
     </div>
 
-    <!-- Mobile Category Filter Chips (Horizontal Scroll) -->
-    <div class="d-flex gap-2 mb-3 overflow-x-auto pb-1" style="-webkit-overflow-scrolling: touch; scrollbar-width: none;">
-        <MudChip T="string" 
-                 Variant="@(_selectedTab == "All" ? Variant.Filled : Variant.Outlined)" 
-                 Color="Color.Primary" 
-                 Size="Size.Small" 
-                 OnClick="@(() => SetFilter("All"))">
-            All (@_allBooks.Count)
-        </MudChip>
-        <MudChip T="string" 
-                 Variant="@(_selectedTab == "Reading" ? Variant.Filled : Variant.Outlined)" 
-                 Color="Color.Primary" 
-                 Size="Size.Small" 
-                 OnClick="@(() => SetFilter("Reading"))">
-            Reading (@_allBooks.Count(b => b.Status == ReadingStatus.CurrentlyReading))
-        </MudChip>
-        <MudChip T="string" 
-                 Variant="@(_selectedTab == "WantToRead" ? Variant.Filled : Variant.Outlined)" 
-                 Color="Color.Primary" 
-                 Size="Size.Small" 
-                 OnClick="@(() => SetFilter("WantToRead"))">
-            Want to Read (@_allBooks.Count(b => b.Status == ReadingStatus.WantToRead))
-        </MudChip>
-        <MudChip T="string" 
-                 Variant="@(_selectedTab == "Completed" ? Variant.Filled : Variant.Outlined)" 
-                 Color="Color.Primary" 
-                 Size="Size.Small" 
-                 OnClick="@(() => SetFilter("Completed"))">
-            Finished (@_allBooks.Count(b => b.Status == ReadingStatus.Completed))
-        </MudChip>
+    <!-- Mobile Category Filter Buttons (Horizontal Scroll, Non-clipping) -->
+    <div class="filter-bar-scroll gap-2 mb-3">
+        <MudButton Variant="@(_selectedTab == "All" ? Variant.Filled : Variant.Outlined)" 
+                   Color="Color.Primary" 
+                   Size="Size.Small" 
+                   Class="filter-pill-btn text-none"
+                   OnClick="@(() => SetFilter("All"))">
+            <span>All</span>
+            <span class="filter-pill-badge @(_selectedTab == "All" ? "active" : "inactive")">@_allBooks.Count</span>
+        </MudButton>
+
+        <MudButton Variant="@(_selectedTab == "Reading" ? Variant.Filled : Variant.Outlined)" 
+                   Color="Color.Primary" 
+                   Size="Size.Small" 
+                   Class="filter-pill-btn text-none"
+                   OnClick="@(() => SetFilter("Reading"))">
+            <span>Reading</span>
+            <span class="filter-pill-badge @(_selectedTab == "Reading" ? "active" : "inactive")">@_allBooks.Count(b => b.Status == ReadingStatus.CurrentlyReading)</span>
+        </MudButton>
+
+        <MudButton Variant="@(_selectedTab == "WantToRead" ? Variant.Filled : Variant.Outlined)" 
+                   Color="Color.Primary" 
+                   Size="Size.Small" 
+                   Class="filter-pill-btn text-none"
+                   OnClick="@(() => SetFilter("WantToRead"))">
+            <span>Want to Read</span>
+            <span class="filter-pill-badge @(_selectedTab == "WantToRead" ? "active" : "inactive")">@_allBooks.Count(b => b.Status == ReadingStatus.WantToRead)</span>
+        </MudButton>
+
+        <MudButton Variant="@(_selectedTab == "Completed" ? Variant.Filled : Variant.Outlined)" 
+                   Color="Color.Primary" 
+                   Size="Size.Small" 
+                   Class="filter-pill-btn text-none"
+                   OnClick="@(() => SetFilter("Completed"))">
+            <span>Finished</span>
+            <span class="filter-pill-badge @(_selectedTab == "Completed" ? "active" : "inactive")">@_allBooks.Count(b => b.Status == ReadingStatus.Completed)</span>
+        </MudButton>
     </div>
 
     @if (_isLoading)
