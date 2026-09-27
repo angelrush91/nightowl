@@ -1,6 +1,8 @@
 @using Nightowl.Domain.ValueObjects
 @using Nightowl.Domain.Enums
+@using Nightowl.Application.Interfaces
 @inject IBookService BookService
+@inject IBookMetadataResolver MetadataResolver
 @inject ISnackbar Snackbar
 @inject IJSRuntime JS
 @implements IAsyncDisposable
@@ -462,9 +464,10 @@
 
         try
         {
-            var meta = await BookService.LookupIsbnAsync(_isbnInput);
-            if (meta != null)
+            var resolution = await MetadataResolver.ResolveAsync(_isbnInput);
+            if (resolution.Status == ResolutionStatus.Success && resolution.Metadata != null)
             {
+                var meta = resolution.Metadata;
                 _previewMetadata = meta;
                 _title = meta.Title;
                 _authors = meta.Authors;
@@ -478,21 +481,33 @@
             }
             else
             {
-                var isbnObj = new Isbn(_isbnInput);
+                var isbnClean = _isbnInput?.Replace("-", "").Replace(" ", "").Trim() ?? "";
                 _previewMetadata = new IsbnBookMetadataDto(
                     Title: "",
                     Subtitle: null,
                     Authors: "",
-                    Isbn: isbnObj.Value,
+                    Isbn: isbnClean,
                     PageCount: 0,
                     Publisher: null,
                     PublishDate: null,
-                    CoverUrl: $"https://covers.openlibrary.org/b/isbn/{isbnObj.Value}-M.jpg",
+                    CoverUrl: $"https://covers.openlibrary.org/b/isbn/{isbnClean}-M.jpg",
                     Description: null
                 );
-                _isbn = isbnObj.Value;
+                _isbn = isbnClean;
                 _coverUrl = _previewMetadata.CoverUrl;
-                Snackbar.Add("No book metadata found online. You can enter details manually.", Severity.Info);
+
+                if (resolution.Status == ResolutionStatus.NetworkError)
+                {
+                    Snackbar.Add(resolution.ErrorMessage ?? "Could not reach book services. You can enter details manually.", Severity.Warning);
+                }
+                else if (resolution.Status == ResolutionStatus.InvalidIsbn)
+                {
+                    Snackbar.Add("Invalid ISBN format. You can enter details manually.", Severity.Warning);
+                }
+                else
+                {
+                    Snackbar.Add("No book metadata found online. You can enter details manually.", Severity.Info);
+                }
             }
         }
         catch (Exception ex)

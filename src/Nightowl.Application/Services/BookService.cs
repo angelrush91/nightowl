@@ -10,12 +10,10 @@ namespace Nightowl.Application.Services;
 public class BookService : IBookService
 {
     private readonly IBookRepository _repository;
-    private readonly IIsbnLookupService _isbnLookupService;
 
-    public BookService(IBookRepository repository, IIsbnLookupService isbnLookupService)
+    public BookService(IBookRepository repository)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
-        _isbnLookupService = isbnLookupService ?? throw new ArgumentNullException(nameof(isbnLookupService));
     }
 
     public async Task<IReadOnlyList<BookSummaryDto>> GetAllBooksAsync(
@@ -138,14 +136,6 @@ public class BookService : IBookService
     {
         var books = await _repository.GetAllAsync(cancellationToken);
         return ReadingStatsCalculator.Calculate(books);
-    }
-
-    public async Task<IsbnBookMetadataDto?> LookupIsbnAsync(string rawIsbn, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrWhiteSpace(rawIsbn))
-            return null;
-
-        return await _isbnLookupService.LookupByIsbnAsync(rawIsbn, cancellationToken);
     }
 
     private static BookSummaryDto MapToSummary(Book book) => new(

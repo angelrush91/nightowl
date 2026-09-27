@@ -1,5 +1,7 @@
 using FluentAssertions;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
+using Nightowl.Application.Interfaces;
 using Nightowl.Infrastructure.ExternalServices;
 using Xunit;
 
@@ -8,40 +10,44 @@ namespace Nightowl.Tests.Infrastructure;
 public class LiveOpenLibraryApiTests
 {
     [Fact]
-    public async Task LookupByIsbnAsync_WithCleanCodeIsbn_ShouldReturnValidMetadataFromLiveApi()
+    public async Task ResolveAsync_WithCleanCodeIsbn_ShouldReturnValidMetadataFromLiveApi()
     {
         // Arrange
         using var httpClient = new HttpClient();
         httpClient.Timeout = TimeSpan.FromSeconds(15);
         httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("NightowlTests/1.0 (Testing ISBN API; contact: test@nightowl.app)");
-        var service = new OpenLibraryIsbnService(httpClient, NullLogger<OpenLibraryIsbnService>.Instance);
+        var memoryCache = new MemoryCache(new MemoryCacheOptions());
+        var resolver = new BookMetadataResolver(httpClient, memoryCache, NullLogger<BookMetadataResolver>.Instance);
 
         // Act - ISBN for Clean Code by Robert C. Martin
-        var metadata = await service.LookupByIsbnAsync("9780132350884");
+        var resolution = await resolver.ResolveAsync("9780132350884");
 
         // Assert
-        metadata.Should().NotBeNull();
-        metadata!.Title.Should().Contain("Clean Code");
-        metadata.Authors.Should().Contain("Martin");
-        metadata.Isbn.Should().Be("9780132350884");
-        metadata.CoverUrl.Should().NotBeNullOrWhiteSpace();
+        resolution.Status.Should().Be(ResolutionStatus.Success);
+        resolution.Metadata.Should().NotBeNull();
+        resolution.Metadata!.Title.Should().Contain("Clean Code");
+        resolution.Metadata.Authors.Should().Contain("Martin");
+        resolution.Metadata.Isbn.Should().Be("9780132350884");
+        resolution.Metadata.CoverUrl.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
-    public async Task LookupByIsbnAsync_WithPragmaticProgrammerIsbn_ShouldReturnValidMetadataFromLiveApi()
+    public async Task ResolveAsync_WithPragmaticProgrammerIsbn_ShouldReturnValidMetadataFromLiveApi()
     {
         // Arrange
         using var httpClient = new HttpClient();
         httpClient.Timeout = TimeSpan.FromSeconds(15);
         httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("NightowlTests/1.0 (Testing ISBN API; contact: test@nightowl.app)");
-        var service = new OpenLibraryIsbnService(httpClient, NullLogger<OpenLibraryIsbnService>.Instance);
+        var memoryCache = new MemoryCache(new MemoryCacheOptions());
+        var resolver = new BookMetadataResolver(httpClient, memoryCache, NullLogger<BookMetadataResolver>.Instance);
 
         // Act - ISBN for The Pragmatic Programmer
-        var metadata = await service.LookupByIsbnAsync("9780201616224");
+        var resolution = await resolver.ResolveAsync("9780201616224");
 
         // Assert
-        metadata.Should().NotBeNull();
-        metadata!.Title.Should().Contain("Pragmatic Programmer");
-        metadata.Isbn.Should().Be("9780201616224");
+        resolution.Status.Should().Be(ResolutionStatus.Success);
+        resolution.Metadata.Should().NotBeNull();
+        resolution.Metadata!.Title.Should().Contain("Pragmatic Programmer");
+        resolution.Metadata.Isbn.Should().Be("9780201616224");
     }
 }

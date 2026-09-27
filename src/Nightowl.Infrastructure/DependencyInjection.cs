@@ -24,21 +24,15 @@ public static class DependencyInjection
         // Initializer
         services.AddScoped<DatabaseInitializer>();
 
-        // HTTP Clients for open-source ISBN APIs
-        services.AddHttpClient<OpenLibraryIsbnService>(client =>
+        // Memory Cache for ISBN metadata resolution
+        services.AddMemoryCache();
+
+        // Deep ISBN Metadata Resolver
+        services.AddHttpClient<IBookMetadataResolver, BookMetadataResolver>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(10);
             client.DefaultRequestHeaders.UserAgent.ParseAdd("Nightowl/1.0 (Book cataloging app)");
         });
-
-        services.AddHttpClient<GoogleBooksFallbackIsbnService>(client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(10);
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("Nightowl/1.0 (Book cataloging app)");
-        });
-
-        // ISBN Lookup Composite Service
-        services.AddScoped<IIsbnLookupService, CompositeIsbnLookupService>();
 
         // Application Services
         services.AddScoped<IBookService, BookService>();

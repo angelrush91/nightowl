@@ -26,7 +26,7 @@ public class OpenLibraryParserTests
         }
         """;
 
-        var result = OpenLibraryIsbnService.ParseSearchResult(json, "9780132350884");
+        var result = BookMetadataResolver.ParseOpenLibrarySearchResult(json, "9780132350884");
 
         result.Should().NotBeNull();
         result!.Title.Should().Be("Clean Code");
@@ -52,7 +52,7 @@ public class OpenLibraryParserTests
         }
         """;
 
-        var result = OpenLibraryIsbnService.ParseSearchResult(json, "9780132350884");
+        var result = BookMetadataResolver.ParseOpenLibrarySearchResult(json, "9780132350884");
 
         result.Should().NotBeNull();
         result!.Title.Should().Be("Minimal Book");
@@ -74,7 +74,7 @@ public class OpenLibraryParserTests
         }
         """;
 
-        var result = OpenLibraryIsbnService.ParseEditionResult(json, "9780201616224");
+        var result = BookMetadataResolver.ParseOpenLibraryEditionResult(json, "9780201616224");
 
         result.Should().NotBeNull();
         result!.Title.Should().Be("The Pragmatic Programmer");
@@ -82,5 +82,40 @@ public class OpenLibraryParserTests
         result.Publisher.Should().Be("Addison-Wesley");
         result.PublishDate.Should().Be("October 1999");
         result.Description.Should().Be("Straight from the programming trenches.");
+    }
+
+    [Fact]
+    public void ParseGoogleBooksResult_ShouldExtractMetadata()
+    {
+        var json = """
+        {
+            "items": [
+                {
+                    "volumeInfo": {
+                        "title": "Refactoring",
+                        "subtitle": "Improving the Design of Existing Code",
+                        "authors": ["Martin Fowler", "Kent Beck"],
+                        "publisher": "Addison-Wesley Professional",
+                        "publishedDate": "2018-11-20",
+                        "description": "Any fool can write code that a computer can understand.",
+                        "pageCount": 448,
+                        "imageLinks": {
+                            "thumbnail": "http://books.google.com/books/content?id=refact&printsec=frontcover"
+                        }
+                    }
+                }
+            ]
+        }
+        """;
+
+        var result = BookMetadataResolver.ParseGoogleBooksResult(json, "9780134757599");
+
+        result.Should().NotBeNull();
+        result!.Title.Should().Be("Refactoring");
+        result.Subtitle.Should().Be("Improving the Design of Existing Code");
+        result.Authors.Should().Be("Martin Fowler, Kent Beck");
+        result.PageCount.Should().Be(448);
+        result.Publisher.Should().Be("Addison-Wesley Professional");
+        result.CoverUrl.Should().StartWith("https://");
     }
 }

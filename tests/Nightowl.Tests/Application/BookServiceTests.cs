@@ -14,14 +14,12 @@ namespace Nightowl.Tests.Application;
 public class BookServiceTests
 {
     private readonly Mock<IBookRepository> _mockRepo;
-    private readonly Mock<IIsbnLookupService> _mockLookup;
     private readonly BookService _service;
 
     public BookServiceTests()
     {
         _mockRepo = new Mock<IBookRepository>();
-        _mockLookup = new Mock<IIsbnLookupService>();
-        _service = new BookService(_mockRepo.Object, _mockLookup.Object);
+        _service = new BookService(_mockRepo.Object);
     }
 
     [Fact]

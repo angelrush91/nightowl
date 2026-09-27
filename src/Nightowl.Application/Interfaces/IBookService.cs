@@ -25,6 +25,4 @@ public interface IBookService
     Task DeleteBookAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<ReadingStatsDto> GetReadingStatsAsync(CancellationToken cancellationToken = default);
-
-    Task<IsbnBookMetadataDto?> LookupIsbnAsync(string rawIsbn, CancellationToken cancellationToken = default);
 }
