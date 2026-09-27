@@ -117,4 +117,37 @@ public class BookTests
 
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
+
+    [Fact]
+    public void NewBook_WithToBeRead_ShouldInitializeCorrectly()
+    {
+        var book = CreateSampleBook(300, ReadingStatus.ToBeRead);
+
+        book.Status.Should().Be(ReadingStatus.ToBeRead);
+        book.Progress.CurrentPage.Should().Be(0);
+        book.DateStarted.Should().BeNull();
+    }
+
+    [Fact]
+    public void UpdateProgress_WhenStatusIsToBeRead_ShouldTransitionToCurrentlyReading()
+    {
+        var book = CreateSampleBook(300, ReadingStatus.ToBeRead);
+
+        book.UpdateProgress(25, "Started reading TBR book");
+
+        book.Status.Should().Be(ReadingStatus.CurrentlyReading);
+        book.Progress.CurrentPage.Should().Be(25);
+        book.DateStarted.Should().NotBeNull();
+        book.ReadingSessions.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public void NewBook_WithToBeReadAndInitialPage_ShouldTransitionToCurrentlyReading()
+    {
+        var book = CreateSampleBook(300, ReadingStatus.ToBeRead, initialPage: 15);
+
+        book.Status.Should().Be(ReadingStatus.CurrentlyReading);
+        book.Progress.CurrentPage.Should().Be(15);
+        book.DateStarted.Should().NotBeNull();
+    }
 }

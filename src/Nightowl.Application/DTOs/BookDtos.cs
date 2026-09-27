@@ -100,5 +100,6 @@ public record ReadingStatsDto(
     int BooksWantToRead,
     int TotalPagesRead,
     double CompletionPercentage,
-    double? AverageRating
+    double? AverageRating,
+    int BooksTbr = 0
 );

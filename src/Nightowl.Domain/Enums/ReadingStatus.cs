@@ -6,5 +6,6 @@ public enum ReadingStatus
     CurrentlyReading = 1,
     Completed = 2,
     OnHold = 3,
-    Dropped = 4
+    Dropped = 4,
+    ToBeRead = 5
 }

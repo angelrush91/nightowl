@@ -44,6 +44,7 @@ else
 
                     <MudSelect T="ReadingStatus" Value="@_book.Status" ValueChanged="OnStatusChanged" Label="Reading Status" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3">
                         <MudSelectItem Value="ReadingStatus.WantToRead">Want to Read</MudSelectItem>
+                        <MudSelectItem Value="ReadingStatus.ToBeRead">TBR (To Be Read)</MudSelectItem>
                         <MudSelectItem Value="ReadingStatus.CurrentlyReading">Currently Reading</MudSelectItem>
                         <MudSelectItem Value="ReadingStatus.Completed">Completed</MudSelectItem>
                         <MudSelectItem Value="ReadingStatus.OnHold">On Hold</MudSelectItem>

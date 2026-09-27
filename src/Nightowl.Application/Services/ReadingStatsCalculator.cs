@@ -26,6 +26,7 @@ public static class ReadingStatsCalculator
         int completed = bookList.Count(b => b.Status == ReadingStatus.Completed);
         int reading = bookList.Count(b => b.Status == ReadingStatus.CurrentlyReading);
         int wantToRead = bookList.Count(b => b.Status == ReadingStatus.WantToRead);
+        int tbr = bookList.Count(b => b.Status == ReadingStatus.ToBeRead);
         int totalPages = bookList.Sum(b => b.Progress.CurrentPage);
 
         double completionPercentage = Math.Round((double)completed / total * 100.0, 1);
@@ -42,7 +43,8 @@ public static class ReadingStatsCalculator
             BooksWantToRead: wantToRead,
             TotalPagesRead: totalPages,
             CompletionPercentage: completionPercentage,
-            AverageRating: avgRating
+            AverageRating: avgRating,
+            BooksTbr: tbr
         );
     }
 }

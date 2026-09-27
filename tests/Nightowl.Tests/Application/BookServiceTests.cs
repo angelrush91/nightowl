@@ -91,17 +91,20 @@ public class BookServiceTests
 
         var book3 = new Book("Book 3", "Author 3", new Isbn("0-306-40615-2"), 150); // want to read
 
+        var book4 = new Book("Book 4", "Author 4", new Isbn("978-0-13-449416-6"), 250, status: ReadingStatus.ToBeRead); // TBR
+
         _mockRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Book> { book1, book2, book3 });
+            .ReturnsAsync(new List<Book> { book1, book2, book3, book4 });
 
         var stats = await _service.GetReadingStatsAsync();
 
-        stats.TotalBooks.Should().Be(3);
+        stats.TotalBooks.Should().Be(4);
         stats.BooksCompleted.Should().Be(1);
         stats.BooksCurrentlyReading.Should().Be(1);
         stats.BooksWantToRead.Should().Be(1);
+        stats.BooksTbr.Should().Be(1);
         stats.TotalPagesRead.Should().Be(300); // 200 + 100
-        stats.CompletionPercentage.Should().Be(33.3);
+        stats.CompletionPercentage.Should().Be(25.0);
     }
 
     [Fact]

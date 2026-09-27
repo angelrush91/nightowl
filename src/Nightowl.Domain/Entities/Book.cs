@@ -72,7 +72,7 @@ public class Book
                 Status = ReadingStatus.Completed;
                 DateCompleted = DateTime.UtcNow;
             }
-            else if (Status == ReadingStatus.WantToRead)
+            else if (Status == ReadingStatus.WantToRead || Status == ReadingStatus.ToBeRead)
             {
                 Status = ReadingStatus.CurrentlyReading;
             }
@@ -103,7 +103,7 @@ public class Book
             Status = ReadingStatus.Completed;
             DateCompleted ??= DateTime.UtcNow;
         }
-        else if (Status == ReadingStatus.WantToRead && Progress.CurrentPage > 0)
+        else if ((Status == ReadingStatus.WantToRead || Status == ReadingStatus.ToBeRead) && Progress.CurrentPage > 0)
         {
             Status = ReadingStatus.CurrentlyReading;
             DateStarted ??= DateTime.UtcNow;

@@ -52,6 +52,15 @@
             <span class="filter-pill-badge @(_selectedTab == "WantToRead" ? "active" : "inactive")">@_allBooks.Count(b => b.Status == ReadingStatus.WantToRead)</span>
         </MudButton>
 
+        <MudButton Variant="@(_selectedTab == "ToBeRead" ? Variant.Filled : Variant.Outlined)" 
+                   Color="Color.Primary" 
+                   Size="Size.Small" 
+                   Class="filter-pill-btn text-none"
+                   OnClick="@(() => SetFilter("ToBeRead"))">
+            <span>TBR</span>
+            <span class="filter-pill-badge @(_selectedTab == "ToBeRead" ? "active" : "inactive")">@_allBooks.Count(b => b.Status == ReadingStatus.ToBeRead)</span>
+        </MudButton>
+
         <MudButton Variant="@(_selectedTab == "Completed" ? Variant.Filled : Variant.Outlined)" 
                    Color="Color.Primary" 
                    Size="Size.Small" 
@@ -207,6 +216,7 @@
         {
             "Reading" => query.Where(b => b.Status == ReadingStatus.CurrentlyReading),
             "WantToRead" => query.Where(b => b.Status == ReadingStatus.WantToRead),
+            "ToBeRead" => query.Where(b => b.Status == ReadingStatus.ToBeRead),
             "Completed" => query.Where(b => b.Status == ReadingStatus.Completed),
             _ => query
         };
@@ -255,6 +265,7 @@
         ReadingStatus.CurrentlyReading => Color.Primary,
         ReadingStatus.Completed => Color.Success,
         ReadingStatus.WantToRead => Color.Info,
+        ReadingStatus.ToBeRead => Color.Secondary,
         ReadingStatus.OnHold => Color.Warning,
         ReadingStatus.Dropped => Color.Error,
         _ => Color.Default
@@ -265,6 +276,7 @@
         ReadingStatus.CurrentlyReading => "Reading",
         ReadingStatus.Completed => "Completed",
         ReadingStatus.WantToRead => "Want to Read",
+        ReadingStatus.ToBeRead => "TBR",
         ReadingStatus.OnHold => "On Hold",
         ReadingStatus.Dropped => "Dropped",
         _ => status.ToString()
