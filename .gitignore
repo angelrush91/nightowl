@@ -17,6 +17,7 @@
 *.apk
 *.aab
 *.keystore
+!nightowl.keystore
 *.jks
 
 ## Logs & Temp
